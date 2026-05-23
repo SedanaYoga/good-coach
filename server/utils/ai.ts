@@ -60,7 +60,7 @@ Provide the output strictly as a JSON array of objects with the following format
 `
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = ai.getGenerativeModel({ model: 'gemini-3.5-flash' })
     const result = await model.generateContent(prompt)
     const text = result.response.text().trim()
 
@@ -122,7 +122,7 @@ Return only the text feedback, no markdown, no quotes, no extra tags.
 `
 
   try {
-    const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = ai.getGenerativeModel({ model: 'gemini-3.5-flash' })
     const result = await model.generateContent(prompt)
     return result.response.text().trim()
   } catch (err) {
