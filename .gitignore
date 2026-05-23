@@ -25,5 +25,6 @@ logs
 
 running_coach.db-shm
 running_coach.db-wal
+running_coach.db
 
 .playwright-mcp
