@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DashboardResponse } from '../../types/domain/coach'
+import type { DashboardResponse } from 'types/domain/coach'
 
 const dashboardData = ref<DashboardResponse | null>(null)
 const isLoading = ref<boolean>(true)

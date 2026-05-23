@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import { join } from 'path';
-import type { AthleteConfig } from '../../types/domain/athlete';
-import type { Activity } from '../../types/domain/activity';
-import type { Workout } from '../../types/domain/workout';
+import type { AthleteConfig } from 'types/domain/athlete';
+import type { Activity } from 'types/domain/activity';
+import type { Workout } from 'types/domain/workout';
 
 let dbInstance: Database.Database | null = null;
 
@@ -85,7 +85,7 @@ export function saveAthleteConfig(config: Partial<AthleteConfig>): void {
   
   if (current) {
     const keys = Object.keys(config) as Array<keyof AthleteConfig>;
-    const setClause = keys.map(k => `${k} = ?`).join(', ');
+    const setClause = keys.map(k => `${String(k)} = ?`).join(', ');
     const values = keys.map(k => config[k] ?? null);
     db.prepare(`UPDATE athlete_config SET ${setClause} WHERE id = 1`).run(...values);
   } else {
@@ -164,7 +164,7 @@ export function saveWorkoutsPlan(workouts: Workout[]): void {
 export function updateWorkout(id: string, updates: Partial<Workout>): void {
   const db = getDb();
   const keys = Object.keys(updates) as Array<keyof Workout>;
-  const setClause = keys.map(k => `${k} = ?`).join(', ');
+  const setClause = keys.map(k => `${String(k)} = ?`).join(', ');
   const values = keys.map(k => updates[k] ?? null);
   db.prepare(`UPDATE workouts SET ${setClause} WHERE id = ?`).run(...values, id);
 }

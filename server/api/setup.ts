@@ -2,7 +2,7 @@ import { getAthleteConfig, saveAthleteConfig, saveWorkoutsPlan } from '../utils/
 import { generateTrainingPlan } from '../utils/ai';
 import { matchAndAnalyzeActivities } from '../utils/coach';
 import { syncStravaActivities } from '../utils/strava';
-import type { SetupRequest, SetupConfigResponse } from '../../types/domain/athlete';
+import type { SetupRequest, SetupConfigResponse } from 'types/domain/athlete';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;

@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type {
-  SetupConfigResponse,
-  SetupRequest,
-} from '../../types/domain/athlete'
+import type { SetupConfigResponse, SetupRequest } from 'types/domain/athlete'
 
 const route = useRoute()
 const router = useRouter()

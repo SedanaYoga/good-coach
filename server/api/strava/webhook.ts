@@ -1,7 +1,7 @@
 import { getValidAccessToken } from '../../utils/strava'
 import { saveActivity } from '../../utils/db'
 import { matchAndAnalyzeActivities } from '../../utils/coach'
-import type { StravaActivity } from '../../../types/domain/activity'
+import type { StravaActivity } from 'types/domain/activity'
 
 interface WebhookQuery {
   'hub.mode'?: string

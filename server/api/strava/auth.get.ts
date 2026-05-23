@@ -1,5 +1,5 @@
 import { saveAthleteConfig } from '../../utils/db';
-import type { StravaTokenResponse } from '../../../types/domain/athlete';
+import type { StravaTokenResponse } from 'types/domain/athlete';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);

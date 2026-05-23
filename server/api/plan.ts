@@ -1,7 +1,7 @@
 import { getAthleteConfig, getWorkoutsPlan, getActivities } from '../utils/db';
 import { getWorkoutDate } from '../utils/coach';
-import type { Workout } from '../../types/domain/workout';
-import type { Activity } from '../../types/domain/activity';
+import type { Workout } from 'types/domain/workout';
+import type { Activity } from 'types/domain/activity';
 
 export default defineEventHandler(async (event) => {
   const athlete = getAthleteConfig();

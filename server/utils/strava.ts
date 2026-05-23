@@ -1,7 +1,7 @@
 import { getAthleteConfig, saveAthleteConfig, saveActivity } from './db'
 import { matchAndAnalyzeActivities } from './coach'
-import type { StravaTokenResponse } from '../../types/domain/athlete'
-import type { StravaActivity } from '../../types/domain/activity'
+import type { StravaTokenResponse } from 'types/domain/athlete'
+import type { StravaActivity } from 'types/domain/activity'
 
 export async function getValidAccessToken(): Promise<string> {
   const config = useRuntimeConfig()

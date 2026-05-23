@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Workout } from '../../types/domain/workout'
+import type { Workout } from 'types/domain/workout'
 
 interface PlanResponse {
   plan: {
