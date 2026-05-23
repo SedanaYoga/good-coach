@@ -1,87 +1,104 @@
 <script setup>
-const dashboardData = ref(null);
-const isLoading = ref(true);
-const isSyncing = ref(false);
-const syncError = ref(null);
-const syncSuccess = ref(false);
+const dashboardData = ref(null)
+const isLoading = ref(true)
+const isSyncing = ref(false)
+const syncError = ref(null)
+const syncSuccess = ref(false)
 
-const router = useRouter();
+const router = useRouter()
 
-async function fetchDashboard() {
+async function fetchDashboard(triggerBackgroundSync = false) {
   try {
-    const data = await $fetch('/api/dashboard');
+    const data = await $fetch('/api/dashboard')
     if (data.setupRequired) {
-      router.push('/setup');
-      return;
+      router.push('/setup')
+      return
     }
-    dashboardData.value = data;
+    dashboardData.value = data
+    if (triggerBackgroundSync && data.connected) {
+      triggerSync(true)
+    }
   } catch (err) {
-    console.error('Failed to fetch dashboard data:', err);
+    console.error('Failed to fetch dashboard data:', err)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 
-async function triggerSync() {
-  isSyncing.value = true;
-  syncError.value = null;
-  syncSuccess.value = false;
+async function triggerSync(silent = false) {
+  if (!silent) {
+    isSyncing.value = true
+    syncError.value = null
+    syncSuccess.value = false
+  }
 
   try {
-    const res = await $fetch('/api/strava/sync', { method: 'POST' });
+    const res = await $fetch('/api/strava/sync', { method: 'POST' })
     if (res.success) {
-      syncSuccess.value = true;
-      await fetchDashboard();
-      setTimeout(() => {
-        syncSuccess.value = false;
-      }, 3000);
+      if (!silent) {
+        syncSuccess.value = true
+        setTimeout(() => {
+          syncSuccess.value = false
+        }, 3000)
+      }
+      const data = await $fetch('/api/dashboard')
+      dashboardData.value = data
     }
   } catch (err) {
-    console.error('Sync failed:', err);
-    syncError.value = err.data?.statusMessage || 'Sync failed. Check your API keys.';
+    console.error('Sync failed:', err)
+    if (!silent) {
+      syncError.value =
+        err.data?.statusMessage || 'Sync failed. Check your API keys.'
+    }
   } finally {
-    isSyncing.value = false;
+    if (!silent) {
+      isSyncing.value = false
+    }
   }
 }
 
 onMounted(() => {
-  fetchDashboard();
-});
+  fetchDashboard(true)
+})
 
 // Format Helper
 function formatDistance(meters) {
-  if (!meters) return '0.0 km';
-  return `${(meters / 1000).toFixed(2)} km`;
+  if (!meters) return '0.0 km'
+  return `${(meters / 1000).toFixed(2)} km`
 }
 
 function formatDuration(seconds) {
-  if (!seconds) return 'N/A';
-  const mins = Math.floor(seconds / 60);
-  if (mins < 60) return `${mins} mins`;
-  const hrs = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-  return `${hrs}h ${remainingMins}m`;
+  if (!seconds) return 'N/A'
+  const mins = Math.floor(seconds / 60)
+  if (mins < 60) return `${mins} mins`
+  const hrs = Math.floor(mins / 60)
+  const remainingMins = mins % 60
+  return `${hrs}h ${remainingMins}m`
 }
 
 function formatPace(speedMps) {
-  if (!speedMps || speedMps === 0) return '00:00 /km';
+  if (!speedMps || speedMps === 0) return '00:00 /km'
   // Pace is minutes per kilometer
-  const paceSecondsPerKm = 1000 / speedMps;
-  const minutes = Math.floor(paceSecondsPerKm / 60);
-  const seconds = Math.round(paceSecondsPerKm % 60);
-  return `${minutes}:${seconds.toString().padStart(2, '0')} /km`;
+  const paceSecondsPerKm = 1000 / speedMps
+  const minutes = Math.floor(paceSecondsPerKm / 60)
+  const seconds = Math.round(paceSecondsPerKm % 60)
+  return `${minutes}:${seconds.toString().padStart(2, '0')} /km`
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr + 'T12:00:00');
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  if (!dateStr) return ''
+  const date = new Date(dateStr + 'T12:00:00')
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 // Active coach feedback toggle state
-const expandedFeedback = ref({});
+const expandedFeedback = ref({})
 function toggleFeedback(activityId) {
-  expandedFeedback.value[activityId] = !expandedFeedback.value[activityId];
+  expandedFeedback.value[activityId] = !expandedFeedback.value[activityId]
 }
 </script>
 
@@ -99,23 +116,28 @@ function toggleFeedback(activityId) {
         <p class="subtitle">Your AI Running Coach is tracking your targets.</p>
       </div>
       <div class="sync-actions">
-        <button 
-          @click="triggerSync" 
-          class="btn-secondary sync-btn" 
+        <button
+          @click="triggerSync"
+          class="btn-secondary sync-btn"
           :disabled="isSyncing || !dashboardData.connected"
         >
           <span v-if="isSyncing" class="sync-spinner">⏳</span>
           <span v-else>🔄</span>
           Sync Strava Activities
         </button>
-        <div v-if="syncSuccess" class="toast toast-success">Synced successfully!</div>
+        <div v-if="syncSuccess" class="toast toast-success">
+          Synced successfully!
+        </div>
         <div v-if="syncError" class="toast toast-error">{{ syncError }}</div>
       </div>
     </div>
 
     <!-- Notification when Strava is not connected -->
     <div v-if="!dashboardData.connected" class="not-connected-banner">
-      <span>⚠️ Your Strava account is not connected. Connect in Settings to load actual runs.</span>
+      <span
+        >⚠️ Your Strava account is not connected. Connect in Settings to load
+        actual runs.</span
+      >
       <NuxtLink to="/setup" class="banner-link">Configure Setup →</NuxtLink>
     </div>
 
@@ -126,61 +148,113 @@ function toggleFeedback(activityId) {
         <div class="glass-card next-workout-card">
           <div class="card-header">
             <span class="badge-accent">NEXT WORKOUT</span>
-            <span class="workout-date" v-if="dashboardData.nextWorkout">{{ formatDate(dashboardData.nextWorkout.calculated_date) }}</span>
+            <span class="workout-date" v-if="dashboardData.nextWorkout">{{
+              formatDate(dashboardData.nextWorkout.calculated_date)
+            }}</span>
           </div>
 
           <div v-if="dashboardData.nextWorkout" class="workout-body">
             <div class="workout-type-icon">
-              <span v-if="dashboardData.nextWorkout.workout_type === 'easy_run'">🏃</span>
-              <span v-else-if="dashboardData.nextWorkout.workout_type === 'long_run'">🚀</span>
-              <span v-else-if="dashboardData.nextWorkout.workout_type === 'interval'">🔥</span>
-              <span v-else-if="dashboardData.nextWorkout.workout_type === 'strength'">💪</span>
+              <span v-if="dashboardData.nextWorkout.workout_type === 'easy_run'"
+                >🏃</span
+              >
+              <span
+                v-else-if="
+                  dashboardData.nextWorkout.workout_type === 'long_run'
+                "
+                >🚀</span
+              >
+              <span
+                v-else-if="
+                  dashboardData.nextWorkout.workout_type === 'interval'
+                "
+                >🔥</span
+              >
+              <span
+                v-else-if="
+                  dashboardData.nextWorkout.workout_type === 'strength'
+                "
+                >💪</span
+              >
               <span v-else>🧘</span>
             </div>
 
             <div class="workout-details">
               <h2>{{ dashboardData.nextWorkout.title }}</h2>
-              <p class="workout-desc">{{ dashboardData.nextWorkout.description }}</p>
-              
+              <p class="workout-desc">
+                {{ dashboardData.nextWorkout.description }}
+              </p>
+
               <div class="workout-targets">
-                <div v-if="dashboardData.nextWorkout.distance_target" class="target-stat">
+                <div
+                  v-if="dashboardData.nextWorkout.distance_target"
+                  class="target-stat"
+                >
                   <span class="label">Target Distance</span>
-                  <span class="value">{{ formatDistance(dashboardData.nextWorkout.distance_target) }}</span>
+                  <span class="value">{{
+                    formatDistance(dashboardData.nextWorkout.distance_target)
+                  }}</span>
                 </div>
-                <div v-if="dashboardData.nextWorkout.duration_target" class="target-stat">
+                <div
+                  v-if="dashboardData.nextWorkout.duration_target"
+                  class="target-stat"
+                >
                   <span class="label">Target Duration</span>
-                  <span class="value">{{ formatDuration(dashboardData.nextWorkout.duration_target) }}</span>
+                  <span class="value">{{
+                    formatDuration(dashboardData.nextWorkout.duration_target)
+                  }}</span>
                 </div>
                 <div class="target-stat">
                   <span class="label">Session Type</span>
-                  <span class="value capitalize">{{ dashboardData.nextWorkout.workout_type.replace('_', ' ') }}</span>
+                  <span class="value capitalize">{{
+                    dashboardData.nextWorkout.workout_type.replace('_', ' ')
+                  }}</span>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div v-else class="no-workout">
-            <p>No active workouts found. Maybe you completed your plan? Excellent job!</p>
+            <p>
+              No active workouts found. Maybe you completed your plan? Excellent
+              job!
+            </p>
           </div>
         </div>
 
         <!-- Weekly Schedule Grid -->
         <div class="glass-card week-overview-card">
           <h3>Week {{ dashboardData.currentWeekNum }} Overview</h3>
-          <p class="section-desc">Scheduled sessions for your current training block.</p>
-          
+          <p class="section-desc">
+            Scheduled sessions for your current training block.
+          </p>
+
           <div class="week-days-grid">
-            <div 
-              v-for="w in dashboardData.currentWeekWorkouts" 
+            <div
+              v-for="w in dashboardData.currentWeekWorkouts"
               :key="w.id"
-              :class="['day-card', `status-${w.status}`, { 'is-next': dashboardData.nextWorkout && dashboardData.nextWorkout.id === w.id }]"
+              :class="[
+                'day-card',
+                `status-${w.status}`,
+                {
+                  'is-next':
+                    dashboardData.nextWorkout &&
+                    dashboardData.nextWorkout.id === w.id,
+                },
+              ]"
             >
               <div class="day-num">Day {{ w.day_number }}</div>
-              <div class="day-type-badge">{{ w.workout_type.replace('_', ' ') }}</div>
+              <div class="day-type-badge">
+                {{ w.workout_type.replace('_', ' ') }}
+              </div>
               <div class="day-title">{{ w.title }}</div>
               <div class="day-status-indicator">
-                <span v-if="w.status === 'completed'" class="icon-completed">✅ Done</span>
-                <span v-else-if="w.status === 'skipped'" class="icon-skipped">❌ Skipped</span>
+                <span v-if="w.status === 'completed'" class="icon-completed"
+                  >✅ Done</span
+                >
+                <span v-else-if="w.status === 'skipped'" class="icon-skipped"
+                  >❌ Skipped</span
+                >
                 <span v-else class="icon-pending">⏳ Pending</span>
               </div>
             </div>
@@ -194,7 +268,9 @@ function toggleFeedback(activityId) {
         <div class="glass-card metrics-card">
           <h3>Target: {{ dashboardData.athlete.raceDistance }} Race</h3>
           <div class="countdown-stat">
-            <span class="countdown-number">{{ dashboardData.daysUntilRace }}</span>
+            <span class="countdown-number">{{
+              dashboardData.daysUntilRace
+            }}</span>
             <span class="countdown-label">Days to Race</span>
           </div>
 
@@ -204,17 +280,25 @@ function toggleFeedback(activityId) {
               <span>{{ dashboardData.progressPercent }}%</span>
             </div>
             <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: `${dashboardData.progressPercent}%` }"></div>
+              <div
+                class="progress-fill"
+                :style="{ width: `${dashboardData.progressPercent}%` }"
+              ></div>
             </div>
           </div>
 
           <div class="extra-metrics">
             <div class="metric-box">
-              <span class="metric-val">{{ dashboardData.totalDistanceKm }} km</span>
+              <span class="metric-val"
+                >{{ dashboardData.totalDistanceKm }} km</span
+              >
               <span class="metric-lbl">Total Logged Distance</span>
             </div>
             <div class="metric-box">
-              <span class="metric-val">{{ dashboardData.completedWorkoutsCount }} / {{ dashboardData.totalWorkoutsCount }}</span>
+              <span class="metric-val"
+                >{{ dashboardData.completedWorkoutsCount }} /
+                {{ dashboardData.totalWorkoutsCount }}</span
+              >
               <span class="metric-lbl">Workouts Hit</span>
             </div>
           </div>
@@ -223,22 +307,31 @@ function toggleFeedback(activityId) {
         <!-- Recent Activities Feed -->
         <div class="glass-card activities-feed-card">
           <h3>Recent Activities</h3>
-          <p class="section-desc">Latest synced entries from your Strava account.</p>
+          <p class="section-desc">
+            Latest synced entries from your Strava account.
+          </p>
 
-          <div v-if="dashboardData.recentActivities.length > 0" class="activities-list">
-            <div 
-              v-for="act in dashboardData.recentActivities" 
-              :key="act.id" 
+          <div
+            v-if="dashboardData.recentActivities.length > 0"
+            class="activities-list"
+          >
+            <div
+              v-for="act in dashboardData.recentActivities"
+              :key="act.id"
               class="activity-item"
             >
               <div class="activity-header">
                 <div>
                   <h4 class="activity-title">{{ act.name }}</h4>
-                  <span class="activity-date">{{ formatDate(act.start_date) }}</span>
+                  <span class="activity-date">{{
+                    formatDate(act.start_date)
+                  }}</span>
                 </div>
                 <div class="activity-badges">
                   <span class="sport-badge">{{ act.sport_type }}</span>
-                  <span v-if="act.matched_workout_id" class="matched-badge">Matched</span>
+                  <span v-if="act.matched_workout_id" class="matched-badge"
+                    >Matched</span
+                  >
                 </div>
               </div>
 
@@ -257,14 +350,20 @@ function toggleFeedback(activityId) {
                 </div>
                 <div v-if="act.average_heartrate">
                   <span class="lbl">Avg HR</span>
-                  <span class="val">{{ Math.round(act.average_heartrate) }} bpm</span>
+                  <span class="val"
+                    >{{ Math.round(act.average_heartrate) }} bpm</span
+                  >
                 </div>
               </div>
 
               <!-- Coach Feedback Expander -->
               <div v-if="act.coach_feedback" class="feedback-section">
                 <button @click="toggleFeedback(act.id)" class="feedback-toggle">
-                  {{ expandedFeedback[act.id] ? 'Hide Coach Feedback 🔼' : 'Show Coach Feedback 🔽' }}
+                  {{
+                    expandedFeedback[act.id]
+                      ? 'Hide Coach Feedback 🔼'
+                      : 'Show Coach Feedback 🔽'
+                  }}
                 </button>
                 <div v-if="expandedFeedback[act.id]" class="feedback-bubble">
                   <span class="coach-icon">🧠</span>
@@ -275,7 +374,10 @@ function toggleFeedback(activityId) {
           </div>
 
           <div v-else class="no-activities">
-            <p>No Strava activities found. Record a run/strength session on Strava and click Sync above!</p>
+            <p>
+              No Strava activities found. Record a run/strength session on
+              Strava and click Sync above!
+            </p>
           </div>
         </div>
       </div>
@@ -303,7 +405,9 @@ function toggleFeedback(activityId) {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .dashboard-container {
@@ -332,6 +436,7 @@ function toggleFeedback(activityId) {
   margin-bottom: 8px;
   background: linear-gradient(135deg, #ffffff 0%, var(--color-text-muted) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -419,7 +524,8 @@ function toggleFeedback(activityId) {
   }
 }
 
-.main-column, .side-column {
+.main-column,
+.side-column {
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -439,7 +545,11 @@ function toggleFeedback(activityId) {
   right: 0;
   width: 150px;
   height: 150px;
-  background: radial-gradient(circle, rgba(181, 255, 43, 0.05) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(181, 255, 43, 0.05) 0%,
+    transparent 70%
+  );
   pointer-events: none;
 }
 
@@ -489,7 +599,7 @@ function toggleFeedback(activityId) {
   justify-content: center;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-glass);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .workout-details {
@@ -587,7 +697,7 @@ function toggleFeedback(activityId) {
   font-size: 0.65rem;
   text-transform: uppercase;
   font-weight: 700;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -640,10 +750,15 @@ function toggleFeedback(activityId) {
   font-size: 4rem;
   font-weight: 800;
   line-height: 1;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 100%
+  );
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 20px rgba(181,255,43,0.1);
+  text-shadow: 0 4px 20px rgba(181, 255, 43, 0.1);
 }
 
 .countdown-label {
@@ -667,14 +782,18 @@ function toggleFeedback(activityId) {
 }
 
 .progress-bar {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   height: 8px;
   border-radius: 999px;
   overflow: hidden;
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 100%
+  );
   height: 100%;
   border-radius: 999px;
   box-shadow: 0 0 10px rgba(181, 255, 43, 0.3);
@@ -688,7 +807,7 @@ function toggleFeedback(activityId) {
 }
 
 .metric-box {
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
   padding: 16px 12px;
@@ -751,7 +870,7 @@ function toggleFeedback(activityId) {
 
 .sport-badge {
   font-size: 0.65rem;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 500;

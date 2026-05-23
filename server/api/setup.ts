@@ -1,6 +1,7 @@
 import { getAthleteConfig, saveAthleteConfig, saveWorkoutsPlan } from '../utils/db';
 import { generateTrainingPlan } from '../utils/ai';
 import { matchAndAnalyzeActivities } from '../utils/coach';
+import { syncStravaActivities } from '../utils/strava';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
@@ -45,11 +46,22 @@ export default defineEventHandler(async (event) => {
     const workouts = await generateTrainingPlan(body.raceDistance, body.raceDate, body.currentLevel);
     saveWorkoutsPlan(workouts);
 
-    // Try to match any existing activities if connected
-    try {
-      await matchAndAnalyzeActivities();
-    } catch (e) {
-      console.warn('Setup: Post-generation activity matching failed:', e);
+    // Try to sync activities and match them if connected to Strava
+    const athlete = getAthleteConfig();
+    const isConnected = !!(athlete?.strava_refresh_token);
+    if (isConnected) {
+      try {
+        console.log('Setup: Connected to Strava, fetching activities...');
+        await syncStravaActivities();
+      } catch (e) {
+        console.warn('Setup: Post-generation Strava activity sync failed:', e);
+      }
+    } else {
+      try {
+        await matchAndAnalyzeActivities();
+      } catch (e) {
+        console.warn('Setup: Post-generation activity matching failed:', e);
+      }
     }
 
     return {

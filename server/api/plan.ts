@@ -36,7 +36,10 @@ export default defineEventHandler(async (event) => {
     if (!planByWeek[w.week_number]) {
       planByWeek[w.week_number] = [];
     }
-    planByWeek[w.week_number].push(w);
+    const weekWorkouts = planByWeek[w.week_number];
+    if (weekWorkouts) {
+      weekWorkouts.push(w);
+    }
   }
 
   // Format weeks into a list sorted by week number

@@ -1,0 +1,214 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "⚡ PacePilot AI" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: ⚡
+          - generic [ref=e8]: PacePilot AI
+        - navigation [ref=e9]:
+          - link "Dashboard" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Training Plan" [ref=e11] [cursor=pointer]:
+            - /url: /plan
+          - link "Settings" [ref=e12] [cursor=pointer]:
+            - /url: /setup
+    - main [ref=e13]:
+      - status [ref=e14]
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - heading "Hey Athlete, Let's Progress!" [level=1] [ref=e18]
+            - paragraph [ref=e19]: Your AI Running Coach is tracking your targets.
+          - button "🔄 Sync Strava Activities" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]: 🔄
+            - text: Sync Strava Activities
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - generic [ref=e26]:
+                - generic [ref=e27]: NEXT WORKOUT
+                - generic [ref=e28]: Sat, May 23
+              - generic [ref=e29]:
+                - generic [ref=e31]: 🧘
+                - generic [ref=e32]:
+                  - heading "Rest Day" [level=2] [ref=e33]
+                  - paragraph [ref=e34]: Rest before starting next week.
+                  - generic [ref=e36]:
+                    - generic [ref=e37]: Session Type
+                    - generic [ref=e38]: rest
+            - generic [ref=e39]:
+              - heading "Week 1 Overview" [level=3] [ref=e40]
+              - paragraph [ref=e41]: Scheduled sessions for your current training block.
+              - generic [ref=e42]:
+                - generic [ref=e43]:
+                  - generic [ref=e44]: Day 1
+                  - generic [ref=e45]: easy run
+                  - generic [ref=e46]: Easy Run
+                  - generic [ref=e47]: ✅ Done
+                - generic [ref=e48]:
+                  - generic [ref=e49]: Day 2
+                  - generic [ref=e50]: rest
+                  - generic [ref=e51]: Rest Day
+                  - generic [ref=e52]: ⏳ Pending
+                - generic [ref=e53]:
+                  - generic [ref=e54]: Day 3
+                  - generic [ref=e55]: strength
+                  - generic [ref=e56]: Strength Training
+                  - generic [ref=e57]: ✅ Done
+                - generic [ref=e58]:
+                  - generic [ref=e59]: Day 4
+                  - generic [ref=e60]: rest
+                  - generic [ref=e61]: Rest Day
+                  - generic [ref=e62]: ⏳ Pending
+                - generic [ref=e63]:
+                  - generic [ref=e64]: Day 5
+                  - generic [ref=e65]: long run
+                  - generic [ref=e66]: Long Run
+                  - generic [ref=e67]: ✅ Done
+                - generic [ref=e68]:
+                  - generic [ref=e69]: Day 6
+                  - generic [ref=e70]: rest
+                  - generic [ref=e71]: Rest Day
+                  - generic [ref=e72]: ⏳ Pending
+                - generic [ref=e73]:
+                  - generic [ref=e74]: Day 7
+                  - generic [ref=e75]: strength
+                  - generic [ref=e76]: Core & Mobility
+                  - generic [ref=e77]: ⏳ Pending
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - 'heading "Target: 10K Race" [level=3] [ref=e80]'
+              - generic [ref=e81]:
+                - generic [ref=e82]: "72"
+                - generic [ref=e83]: Days to Race
+              - generic [ref=e85]:
+                - generic [ref=e86]: Program Progress
+                - generic [ref=e87]: 4%
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: 9.3 km
+                  - generic [ref=e92]: Total Logged Distance
+                - generic [ref=e93]:
+                  - generic [ref=e94]: 3 / 77
+                  - generic [ref=e95]: Workouts Hit
+            - generic [ref=e96]:
+              - heading "Recent Activities" [level=3] [ref=e97]
+              - paragraph [ref=e98]: Latest synced entries from your Strava account.
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - generic [ref=e101]:
+                    - generic [ref=e102]:
+                      - heading "Outdoor run" [level=4] [ref=e103]
+                      - text: Fri, May 22
+                    - generic [ref=e104]:
+                      - generic [ref=e105]: Run
+                      - generic [ref=e192]: Matched
+                  - generic [ref=e106]:
+                    - generic [ref=e107]:
+                      - generic [ref=e108]: Dist
+                      - text: 5.06 km
+                    - generic [ref=e109]:
+                      - generic [ref=e110]: Time
+                      - text: 44 mins
+                    - generic [ref=e111]:
+                      - generic [ref=e112]: Pace
+                      - text: 8:52 /km
+                    - generic [ref=e113]:
+                      - generic [ref=e114]: Avg HR
+                      - text: 150 bpm
+                  - generic [ref=e193]:
+                    - button "Hide Coach Feedback 🔼" [active] [ref=e201] [cursor=pointer]
+                    - generic [ref=e202]:
+                      - generic [ref=e203]: 🧠
+                      - paragraph [ref=e204]: "\"Awesome work completing your Long Run and hitting that distance, way to go! To truly build that cardiovascular endurance as planned, remember the goal is a comfortable, easy pace where you can chat. Let's aim to keep that effort nice and relaxed next time.\""
+                - generic [ref=e115]:
+                  - generic [ref=e116]:
+                    - generic [ref=e117]:
+                      - heading "Outdoor run" [level=4] [ref=e118]
+                      - text: Fri, May 22
+                    - generic [ref=e120]: Run
+                  - generic [ref=e121]:
+                    - generic [ref=e122]:
+                      - generic [ref=e123]: Dist
+                      - text: 7.11 km
+                    - generic [ref=e124]:
+                      - generic [ref=e125]: Time
+                      - text: 53 mins
+                    - generic [ref=e126]:
+                      - generic [ref=e127]: Pace
+                      - text: 7:34 /km
+                    - generic [ref=e128]:
+                      - generic [ref=e129]: Avg HR
+                      - text: 159 bpm
+                - generic [ref=e130]:
+                  - generic [ref=e131]:
+                    - generic [ref=e132]:
+                      - heading "Yoga" [level=4] [ref=e133]
+                      - text: Thu, May 21
+                    - generic [ref=e135]: Yoga
+                  - generic [ref=e136]:
+                    - generic [ref=e137]:
+                      - generic [ref=e138]: Dist
+                      - text: 0.0 km
+                    - generic [ref=e139]:
+                      - generic [ref=e140]: Time
+                      - text: 56 mins
+                    - generic [ref=e141]:
+                      - generic [ref=e142]: Avg HR
+                      - text: 107 bpm
+                - generic [ref=e143]:
+                  - generic [ref=e144]:
+                    - generic [ref=e145]:
+                      - heading "Strength" [level=4] [ref=e146]
+                      - text: Thu, May 21
+                    - generic [ref=e147]:
+                      - generic [ref=e148]: WeightTraining
+                      - generic [ref=e195]: Matched
+                  - generic [ref=e149]:
+                    - generic [ref=e150]:
+                      - generic [ref=e151]: Dist
+                      - text: 0.0 km
+                    - generic [ref=e152]:
+                      - generic [ref=e153]: Time
+                      - text: 31 mins
+                    - generic [ref=e154]:
+                      - generic [ref=e155]: Avg HR
+                      - text: 129 bpm
+                  - button "Show Coach Feedback 🔽" [ref=e197] [cursor=pointer]
+                - generic [ref=e156]:
+                  - generic [ref=e157]:
+                    - generic [ref=e158]:
+                      - heading "Side stitching with Uyawed :')" [level=4] [ref=e159]
+                      - text: Tue, May 19
+                    - generic [ref=e160]:
+                      - generic [ref=e161]: Run
+                      - generic [ref=e198]: Matched
+                  - generic [ref=e162]:
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: Dist
+                      - text: 4.21 km
+                    - generic [ref=e165]:
+                      - generic [ref=e166]: Time
+                      - text: 34 mins
+                    - generic [ref=e167]:
+                      - generic [ref=e168]: Pace
+                      - text: 8:11 /km
+                    - generic [ref=e169]:
+                      - generic [ref=e170]: Avg HR
+                      - text: 163 bpm
+                  - button "Show Coach Feedback 🔽" [ref=e200] [cursor=pointer]
+    - contentinfo [ref=e171]:
+      - generic [ref=e172]:
+        - paragraph [ref=e173]: © 2026 PacePilot AI. Your running progress, automated.
+        - generic [ref=e176]: SQLite & Gemini Live
+  - generic:
+    - img
+  - generic [ref=e177]:
+    - button "Toggle Nuxt DevTools" [ref=e178] [cursor=pointer]:
+      - img [ref=e179]
+    - generic "Page load time" [ref=e182]:
+      - generic [ref=e183]: "4"
+      - generic [ref=e184]: ms
+    - button "Toggle Component Inspector" [ref=e186] [cursor=pointer]:
+      - img [ref=e187]
