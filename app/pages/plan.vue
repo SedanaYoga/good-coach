@@ -89,82 +89,122 @@ function getWeekTypeSummary(workouts: Workout[]): string {
 </script>
 
 <template>
-  <div v-if="isLoading" class="loading-state animate-fade-in">
-    <div class="spinner"></div>
+  <div
+    v-if="isLoading"
+    class="flex flex-col items-center justify-center min-h-[50vh] gap-4 animate-fade-in"
+  >
+    <div
+      class="w-10 h-10 border-4 border-white/5 border-t-primary rounded-full animate-spin"
+    ></div>
     <p>Loading your training plan...</p>
   </div>
 
-  <div v-else-if="planData" class="plan-container animate-fade-in">
-    <div class="plan-header">
-      <h1>Your Training Schedule</h1>
-      <p class="subtitle">
+  <div v-else-if="planData" class="max-w-[800px] mx-auto animate-fade-in">
+    <div class="text-center mb-10">
+      <h1
+        class="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight bg-linear-to-br from-white to-text-muted bg-clip-text text-transparent"
+      >
+        Your Training Schedule
+      </h1>
+      <p class="text-text-muted">
         Complete week-by-week roadmap for your {{ planData.raceDistance }} on
         {{ formatDate(planData.raceDate) }}.
       </p>
     </div>
 
     <!-- Accordion of Weeks -->
-    <div class="weeks-accordion">
+    <div class="flex flex-col">
       <div
         v-for="week in planData.plan"
         :key="week.weekNumber"
-        :class="[
-          'week-section',
-          { 'is-expanded': expandedWeeks[week.weekNumber] },
-        ]"
+        class="flex flex-col"
       >
         <!-- Week Header -->
         <button
           @click="toggleWeek(week.weekNumber)"
-          class="week-header-btn glass-card"
+          class="w-full text-left flex justify-between items-center cursor-pointer py-5 border-b border-white/10 hover:text-white transition-colors group"
         >
-          <div class="week-title-area">
-            <span class="week-badge">WEEK {{ week.weekNumber }}</span>
-            <div class="week-meta">
-              <h3>Training Block {{ week.weekNumber }}</h3>
-              <span class="week-summary">{{
+          <div
+            class="flex flex-row items-center gap-4"
+          >
+            <span
+              class="font-display font-extrabold text-[0.75rem] tracking-wider bg-white/10 text-white px-2.5 py-0.5 rounded-[4px] group-hover:bg-primary group-hover:text-black transition-colors"
+              >WEEK {{ week.weekNumber }}</span
+            >
+            <div>
+              <h3 class="text-base font-semibold text-text-main group-hover:text-white transition-colors">
+                Training Block {{ week.weekNumber }}
+              </h3>
+              <span class="text-xs text-text-muted">{{
                 getWeekTypeSummary(week.workouts)
               }}</span>
             </div>
           </div>
-          <div class="week-toggle-icon">
-            {{ expandedWeeks[week.weekNumber] ? '▼' : '▶' }}
-          </div>
+          <svg
+            :class="['w-4 h-4 text-text-muted transition-transform duration-200 group-hover:text-text-main', { 'rotate-180 text-white': expandedWeeks[week.weekNumber] }]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
 
         <!-- Week Workouts List -->
         <div
           v-if="expandedWeeks[week.weekNumber]"
-          class="week-content animate-fade-in"
+          class="pl-2 sm:pl-5 pt-6 pb-4 animate-fade-in"
         >
-          <div class="workouts-timeline">
+          <div class="flex flex-col">
             <div
-              v-for="w in week.workouts"
+              v-for="(w, wIndex) in week.workouts"
               :key="w.id"
-              :class="[
-                'workout-item',
-                `type-${w.workout_type}`,
-                `status-${w.status}`,
-              ]"
+              class="flex relative gap-6 pb-6 last:pb-0"
             >
               <!-- Timeline indicator -->
-              <div class="timeline-indicator">
-                <div class="indicator-dot"></div>
-                <div class="indicator-line"></div>
+              <div class="flex flex-col items-center w-4">
+                <div
+                  :class="[
+                    'w-3 h-3 rounded-full border-2 border-dark z-10 mt-6',
+                    {
+                      'bg-success': w.workout_type === 'easy_run',
+                      'bg-primary': w.workout_type === 'long_run',
+                      'bg-secondary': w.workout_type === 'interval',
+                      'bg-warning': w.workout_type === 'strength',
+                      'bg-text-muted': w.workout_type === 'rest',
+                    },
+                  ]"
+                ></div>
+                <div
+                  v-if="wIndex < week.workouts.length - 1"
+                  class="flex-1 w-[2px] bg-white/5"
+                ></div>
               </div>
 
               <!-- Workout Content Card -->
-              <div class="glass-card workout-card">
-                <div class="w-header">
-                  <div class="w-info">
-                    <span class="w-day"
+              <div class="glass-card flex-1">
+                <div
+                  class="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-4 mb-3"
+                >
+                  <div>
+                    <span
+                      class="text-[0.8rem] text-text-muted uppercase tracking-wider block mb-0.5"
                       >Day {{ w.day_number }} •
                       {{ formatDate(w.calculated_date) }}</span
                     >
-                    <h4 class="w-title">{{ w.title }}</h4>
+                    <h4 class="text-base font-semibold tracking-tight">{{ w.title }}</h4>
                   </div>
-                  <div class="w-status">
-                    <span :class="['status-badge', w.status]">
+                  <div>
+                    <span
+                      :class="[
+                        'text-[0.7rem] font-bold uppercase px-2 py-1 rounded-[4px]',
+                        w.status === 'completed'
+                          ? 'bg-success/15 text-success border border-success/20'
+                          : w.status === 'skipped'
+                            ? 'bg-error/15 text-error border border-error/20'
+                            : 'bg-white/5 text-text-muted',
+                      ]"
+                    >
                       {{
                         w.status === 'completed'
                           ? '✓ Completed'
@@ -176,21 +216,23 @@ function getWeekTypeSummary(workouts: Workout[]): string {
                   </div>
                 </div>
 
-                <p class="w-description">{{ w.description }}</p>
+                <p class="text-text-muted text-[0.95rem] leading-relaxed mb-4">
+                  {{ w.description }}
+                </p>
 
                 <!-- Targets -->
                 <div
-                  class="w-targets-row"
+                  class="flex flex-wrap gap-4 text-[0.8rem] text-text-muted bg-white/1.5 px-3 py-2 rounded-[6px] border border-dashed border-white/5"
                   v-if="w.distance_target || w.duration_target"
                 >
-                  <span class="target-label">Target:</span>
-                  <span class="target-val" v-if="w.distance_target"
+                  <span class="font-semibold text-text-main">Target:</span>
+                  <span v-if="w.distance_target"
                     >📏 {{ formatDistance(w.distance_target) }}</span
                   >
-                  <span class="target-val" v-if="w.duration_target"
+                  <span v-if="w.duration_target"
                     >⏱️ {{ formatDuration(w.duration_target) }}</span
                   >
-                  <span class="target-valcapitalize"
+                  <span class="capitalize"
                     >⚙️ {{ w.workout_type.replace('_', ' ') }}</span
                   >
                 </div>
@@ -198,34 +240,50 @@ function getWeekTypeSummary(workouts: Workout[]): string {
                 <!-- Completed Activity Link -->
                 <div
                   v-if="w.status === 'completed' && w.activity"
-                  class="completed-activity-box"
+                  class="mt-4 border-t border-white/5 pt-4"
                 >
-                  <div class="box-title">
+                  <div class="text-[0.85rem] font-semibold mb-3 text-success">
                     💪 Sync Session: "{{ w.activity.name }}"
                   </div>
 
-                  <div class="completed-stats">
-                    <div class="stat">
-                      <span class="lbl">Distance</span>
-                      <span class="val">{{
+                  <div
+                    class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-success/3 border border-success/10 p-3 rounded-md mb-3"
+                  >
+                    <div class="flex flex-col">
+                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
+                        >Distance</span
+                      >
+                      <span class="font-display font-bold text-[1rem]">{{
                         formatDistance(w.activity.distance)
                       }}</span>
                     </div>
-                    <div class="stat">
-                      <span class="lbl">Duration</span>
-                      <span class="val">{{
+                    <div class="flex flex-col">
+                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
+                        >Duration</span
+                      >
+                      <span class="font-display font-bold text-[1rem]">{{
                         formatDuration(w.activity.moving_time)
                       }}</span>
                     </div>
-                    <div class="stat" v-if="w.activity.sport_type === 'Run'">
-                      <span class="lbl">Avg Pace</span>
-                      <span class="val">{{
+                    <div
+                      class="flex flex-col"
+                      v-if="w.activity.sport_type === 'Run'"
+                    >
+                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
+                        >Avg Pace</span
+                      >
+                      <span class="font-display font-bold text-[1rem]">{{
                         formatPace(w.activity.average_speed)
                       }}</span>
                     </div>
-                    <div class="stat" v-if="w.activity.average_heartrate">
-                      <span class="lbl">Heartrate</span>
-                      <span class="val"
+                    <div
+                      class="flex flex-col"
+                      v-if="w.activity.average_heartrate"
+                    >
+                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
+                        >Heartrate</span
+                      >
+                      <span class="font-display font-bold text-[1rem]"
                         >{{
                           Math.round(w.activity.average_heartrate)
                         }}
@@ -235,9 +293,19 @@ function getWeekTypeSummary(workouts: Workout[]): string {
                   </div>
 
                   <!-- Coach Feedback -->
-                  <div v-if="w.coach_feedback" class="coach-feedback-box">
-                    <span class="feedback-avatar">🧠 Coach Feedback:</span>
-                    <p class="feedback-quote">"{{ w.coach_feedback }}"</p>
+                  <div
+                    v-if="w.coach_feedback"
+                    class="bg-primary/4 border border-primary/10 p-3 rounded-md"
+                  >
+                    <span
+                      class="text-[0.75rem] font-bold text-primary block mb-1"
+                      >🧠 Coach Feedback:</span
+                    >
+                    <p
+                      class="text-[0.85rem] leading-relaxed italic text-slate-200"
+                    >
+                      "{{ w.coach_feedback }}"
+                    </p>
                   </div>
                 </div>
               </div>
@@ -248,343 +316,3 @@ function getWeekTypeSummary(workouts: Workout[]): string {
     </div>
   </div>
 </template>
-
-<style scoped>
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  gap: 16px;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-glass);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.plan-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.plan-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.plan-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #ffffff 0%, var(--color-text-muted) 100%);
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  color: var(--color-text-muted);
-}
-
-/* Accordion */
-.weeks-accordion {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.week-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.week-header-btn {
-  width: 100%;
-  text-align: left;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  padding: 20px 24px;
-}
-
-.week-header-btn:hover {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.week-title-area {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-@media (max-width: 576px) {
-  .week-title-area {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-
-.week-badge {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
-  background: var(--color-primary);
-  color: #000000;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  box-shadow: var(--shadow-neon);
-}
-
-.week-meta h3 {
-  font-size: 1.15rem;
-  margin-bottom: 2px;
-}
-
-.week-summary {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-.week-toggle-icon {
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-}
-
-/* Timeline workouts */
-.week-content {
-  padding-left: 20px;
-}
-
-@media (max-width: 576px) {
-  .week-content {
-    padding-left: 10px;
-  }
-}
-
-.workouts-timeline {
-  display: flex;
-  flex-direction: column;
-}
-
-.workout-item {
-  display: flex;
-  position: relative;
-  gap: 24px;
-  padding-bottom: 24px;
-}
-
-.workout-item:last-child {
-  padding-bottom: 0;
-}
-
-.timeline-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 16px;
-}
-
-.indicator-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--border-glass);
-  border: 2px solid var(--bg-dark);
-  z-index: 10;
-  margin-top: 24px;
-}
-
-.indicator-line {
-  flex: 1;
-  width: 2px;
-  background: var(--border-glass);
-}
-
-.workout-item:last-child .indicator-line {
-  display: none;
-}
-
-.workout-card {
-  flex: 1;
-}
-
-/* Day specifics */
-.w-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 576px) {
-  .w-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-
-.w-day {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.w-title {
-  font-size: 1.15rem;
-  font-weight: 600;
-}
-
-.status-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--color-text-muted);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.status-badge.completed {
-  background: rgba(16, 185, 129, 0.15);
-  color: var(--color-success);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.status-badge.skipped {
-  background: rgba(244, 63, 94, 0.15);
-  color: var(--color-error);
-  border: 1px solid rgba(244, 63, 94, 0.2);
-}
-
-.w-description {
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin-bottom: 16px;
-}
-
-/* Targets */
-.w-targets-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  background: rgba(255, 255, 255, 0.015);
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px dashed var(--border-glass);
-}
-
-.target-label {
-  font-weight: 600;
-  color: var(--color-text-main);
-}
-
-.target-valcapitalize {
-  text-transform: capitalize;
-}
-
-/* Types styles */
-.type-easy_run .indicator-dot {
-  background-color: var(--color-success);
-}
-.type-long_run .indicator-dot {
-  background-color: var(--color-primary);
-}
-.type-interval .indicator-dot {
-  background-color: var(--color-secondary);
-}
-.type-strength .indicator-dot {
-  background-color: var(--color-warning);
-}
-.type-rest .indicator-dot {
-  background-color: var(--color-text-muted);
-}
-
-/* Completed Activity details in card */
-.completed-activity-box {
-  margin-top: 16px;
-  border-top: 1px solid var(--border-glass);
-  padding-top: 16px;
-}
-
-.box-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--color-success);
-}
-
-.completed-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  background: rgba(16, 185, 129, 0.03);
-  border: 1px solid rgba(16, 185, 129, 0.1);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 576px) {
-  .completed-stats {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.completed-stats .lbl {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  display: block;
-  margin-bottom: 2px;
-}
-
-.completed-stats .val {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.coach-feedback-box {
-  background: rgba(181, 255, 43, 0.04);
-  border: 1px solid rgba(181, 255, 43, 0.1);
-  padding: 12px;
-  border-radius: 8px;
-}
-
-.feedback-avatar {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  display: block;
-  margin-bottom: 4px;
-}
-
-.feedback-quote {
-  font-size: 0.85rem;
-  line-height: 1.4;
-  font-style: italic;
-  color: #e2e8f0;
-}
-</style>
