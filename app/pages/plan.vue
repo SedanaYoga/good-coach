@@ -3,12 +3,12 @@ import type { Workout } from '../../types/domain/workout'
 
 interface PlanResponse {
   plan: {
-    weekNumber: number;
-    workouts: Workout[];
-  }[];
-  totalWeeks: number;
-  raceDate: string;
-  raceDistance: string;
+    weekNumber: number
+    workouts: Workout[]
+  }[]
+  totalWeeks: number
+  raceDate: string
+  raceDistance: string
 }
 
 const planData = ref<PlanResponse | null>(null)
@@ -26,7 +26,7 @@ async function fetchPlan() {
       return
     }
     planData.value = data
-    
+
     // Expand week 1 by default
     if (data.plan.length > 0) {
       expandedWeeks.value[1] = true
@@ -72,12 +72,18 @@ function formatPace(speedMps: number | null | undefined): string {
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return ''
   const date = new Date(dateStr + 'T12:00:00')
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 function getWeekTypeSummary(workouts: Workout[]): string {
-  const runs = workouts.filter(w => ['easy_run', 'long_run', 'interval'].includes(w.workout_type)).length
-  const strength = workouts.filter(w => w.workout_type === 'strength').length
+  const runs = workouts.filter((w) =>
+    ['easy_run', 'long_run', 'interval'].includes(w.workout_type),
+  ).length
+  const strength = workouts.filter((w) => w.workout_type === 'strength').length
   return `${runs} Runs, ${strength} Strength`
 }
 </script>
@@ -91,23 +97,34 @@ function getWeekTypeSummary(workouts: Workout[]): string {
   <div v-else-if="planData" class="plan-container animate-fade-in">
     <div class="plan-header">
       <h1>Your Training Schedule</h1>
-      <p class="subtitle">Complete week-by-week roadmap for your {{ planData.raceDistance }} on {{ formatDate(planData.raceDate) }}.</p>
+      <p class="subtitle">
+        Complete week-by-week roadmap for your {{ planData.raceDistance }} on
+        {{ formatDate(planData.raceDate) }}.
+      </p>
     </div>
 
     <!-- Accordion of Weeks -->
     <div class="weeks-accordion">
-      <div 
-        v-for="week in planData.plan" 
-        :key="week.weekNumber" 
-        :class="['week-section', { 'is-expanded': expandedWeeks[week.weekNumber] }]"
+      <div
+        v-for="week in planData.plan"
+        :key="week.weekNumber"
+        :class="[
+          'week-section',
+          { 'is-expanded': expandedWeeks[week.weekNumber] },
+        ]"
       >
         <!-- Week Header -->
-        <button @click="toggleWeek(week.weekNumber)" class="week-header-btn glass-card">
+        <button
+          @click="toggleWeek(week.weekNumber)"
+          class="week-header-btn glass-card"
+        >
           <div class="week-title-area">
             <span class="week-badge">WEEK {{ week.weekNumber }}</span>
             <div class="week-meta">
               <h3>Training Block {{ week.weekNumber }}</h3>
-              <span class="week-summary">{{ getWeekTypeSummary(week.workouts) }}</span>
+              <span class="week-summary">{{
+                getWeekTypeSummary(week.workouts)
+              }}</span>
             </div>
           </div>
           <div class="week-toggle-icon">
@@ -116,12 +133,19 @@ function getWeekTypeSummary(workouts: Workout[]): string {
         </button>
 
         <!-- Week Workouts List -->
-        <div v-if="expandedWeeks[week.weekNumber]" class="week-content animate-fade-in">
+        <div
+          v-if="expandedWeeks[week.weekNumber]"
+          class="week-content animate-fade-in"
+        >
           <div class="workouts-timeline">
-            <div 
-              v-for="w in week.workouts" 
-              :key="w.id" 
-              :class="['workout-item', `type-${w.workout_type}`, `status-${w.status}`]"
+            <div
+              v-for="w in week.workouts"
+              :key="w.id"
+              :class="[
+                'workout-item',
+                `type-${w.workout_type}`,
+                `status-${w.status}`,
+              ]"
             >
               <!-- Timeline indicator -->
               <div class="timeline-indicator">
@@ -133,12 +157,21 @@ function getWeekTypeSummary(workouts: Workout[]): string {
               <div class="glass-card workout-card">
                 <div class="w-header">
                   <div class="w-info">
-                    <span class="w-day">Day {{ w.day_number }} • {{ formatDate(w.calculated_date) }}</span>
+                    <span class="w-day"
+                      >Day {{ w.day_number }} •
+                      {{ formatDate(w.calculated_date) }}</span
+                    >
                     <h4 class="w-title">{{ w.title }}</h4>
                   </div>
                   <div class="w-status">
                     <span :class="['status-badge', w.status]">
-                      {{ w.status === 'completed' ? '✓ Completed' : w.status === 'skipped' ? '✗ Skipped' : 'Pending' }}
+                      {{
+                        w.status === 'completed'
+                          ? '✓ Completed'
+                          : w.status === 'skipped'
+                            ? '✗ Skipped'
+                            : 'Pending'
+                      }}
                     </span>
                   </div>
                 </div>
@@ -146,33 +179,58 @@ function getWeekTypeSummary(workouts: Workout[]): string {
                 <p class="w-description">{{ w.description }}</p>
 
                 <!-- Targets -->
-                <div class="w-targets-row" v-if="w.distance_target || w.duration_target">
+                <div
+                  class="w-targets-row"
+                  v-if="w.distance_target || w.duration_target"
+                >
                   <span class="target-label">Target:</span>
-                  <span class="target-val" v-if="w.distance_target">📏 {{ formatDistance(w.distance_target) }}</span>
-                  <span class="target-val" v-if="w.duration_target">⏱️ {{ formatDuration(w.duration_target) }}</span>
-                  <span class="target-valcapitalize">⚙️ {{ w.workout_type.replace('_', ' ') }}</span>
+                  <span class="target-val" v-if="w.distance_target"
+                    >📏 {{ formatDistance(w.distance_target) }}</span
+                  >
+                  <span class="target-val" v-if="w.duration_target"
+                    >⏱️ {{ formatDuration(w.duration_target) }}</span
+                  >
+                  <span class="target-valcapitalize"
+                    >⚙️ {{ w.workout_type.replace('_', ' ') }}</span
+                  >
                 </div>
 
                 <!-- Completed Activity Link -->
-                <div v-if="w.status === 'completed' && w.activity" class="completed-activity-box">
-                  <div class="box-title">💪 Sync Session: "{{ w.activity.name }}"</div>
-                  
+                <div
+                  v-if="w.status === 'completed' && w.activity"
+                  class="completed-activity-box"
+                >
+                  <div class="box-title">
+                    💪 Sync Session: "{{ w.activity.name }}"
+                  </div>
+
                   <div class="completed-stats">
                     <div class="stat">
                       <span class="lbl">Distance</span>
-                      <span class="val">{{ formatDistance(w.activity.distance) }}</span>
+                      <span class="val">{{
+                        formatDistance(w.activity.distance)
+                      }}</span>
                     </div>
                     <div class="stat">
                       <span class="lbl">Duration</span>
-                      <span class="val">{{ formatDuration(w.activity.moving_time) }}</span>
+                      <span class="val">{{
+                        formatDuration(w.activity.moving_time)
+                      }}</span>
                     </div>
                     <div class="stat" v-if="w.activity.sport_type === 'Run'">
                       <span class="lbl">Avg Pace</span>
-                      <span class="val">{{ formatPace(w.activity.average_speed) }}</span>
+                      <span class="val">{{
+                        formatPace(w.activity.average_speed)
+                      }}</span>
                     </div>
                     <div class="stat" v-if="w.activity.average_heartrate">
                       <span class="lbl">Heartrate</span>
-                      <span class="val">{{ Math.round(w.activity.average_heartrate) }} bpm</span>
+                      <span class="val"
+                        >{{
+                          Math.round(w.activity.average_heartrate)
+                        }}
+                        bpm</span
+                      >
                     </div>
                   </div>
 
@@ -211,7 +269,9 @@ function getWeekTypeSummary(workouts: Workout[]): string {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .plan-container {
@@ -228,7 +288,7 @@ function getWeekTypeSummary(workouts: Workout[]): string {
   font-size: 2.5rem;
   margin-bottom: 12px;
   background: linear-gradient(135deg, #ffffff 0%, var(--color-text-muted) 100%);
-  -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -260,8 +320,8 @@ function getWeekTypeSummary(workouts: Workout[]): string {
 }
 
 .week-header-btn:hover {
-  background: rgba(255,255,255,0.02);
-  border-color: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .week-title-area {
@@ -398,7 +458,7 @@ function getWeekTypeSummary(workouts: Workout[]): string {
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--color-text-muted);
   padding: 4px 8px;
   border-radius: 4px;
@@ -430,7 +490,7 @@ function getWeekTypeSummary(workouts: Workout[]): string {
   gap: 16px;
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  background: rgba(255,255,255,0.015);
+  background: rgba(255, 255, 255, 0.015);
   padding: 8px 12px;
   border-radius: 6px;
   border: 1px dashed var(--border-glass);

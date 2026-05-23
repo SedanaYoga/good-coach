@@ -298,7 +298,7 @@ const minDate = computed(() => {
   font-size: 2.5rem;
   margin-bottom: 12px;
   background: linear-gradient(135deg, #ffffff 0%, var(--color-text-muted) 100%);
-  -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
