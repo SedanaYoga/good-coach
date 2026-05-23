@@ -2,6 +2,7 @@ import { getAthleteConfig, saveAthleteConfig, saveActivity } from './db'
 import { matchAndAnalyzeActivities } from './coach'
 import type { StravaTokenResponse } from 'types/domain/athlete'
 import type { StravaActivity } from 'types/domain/activity'
+import dayjs from 'dayjs'
 
 export async function getValidAccessToken(): Promise<string> {
   const config = useRuntimeConfig()
@@ -80,7 +81,7 @@ export async function syncStravaActivities(): Promise<number> {
       id: act.id,
       name: act.name,
       sport_type: act.sport_type,
-      start_date: act.start_date.split('T')[0], // Extract 'YYYY-MM-DD'
+      start_date: act.start_date_local,
       distance: act.distance, // in meters
       moving_time: act.moving_time, // in seconds
       elapsed_time: act.elapsed_time,

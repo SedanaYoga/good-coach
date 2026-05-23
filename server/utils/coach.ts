@@ -7,6 +7,7 @@ import {
 } from './db'
 import { generateCoachFeedback } from './ai'
 import type { Workout } from 'types/domain/workout'
+import { formatDate } from '~~/utils/date'
 
 export async function matchAndAnalyzeActivities(): Promise<void> {
   const athlete = getAthleteConfig()
@@ -113,7 +114,7 @@ export function getWorkoutDate(
   const wDate = new Date(raceDate)
   wDate.setDate(raceDate.getDate() - daysDiff)
 
-  return wDate.toISOString().split('T')[0] || ''
+  return formatDate(wDate, 'YYYY-MM-DD') || ''
 }
 
 function getCandidateWorkoutsForDate(

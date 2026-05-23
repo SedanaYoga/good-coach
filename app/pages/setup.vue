@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SetupConfigResponse, SetupRequest } from 'types/domain/athlete'
+import { formatDate } from 'utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -93,7 +94,7 @@ async function saveAndGeneratePlan() {
 const minDate = computed(() => {
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
-  return tomorrow.toISOString().split('T')[0] || ''
+  return formatDate(tomorrow, 'YYYY-MM-DD')
 })
 
 const distances = [
@@ -136,8 +137,8 @@ const distances = [
         <UiCardHeader>
           <UiCardTitle>1. Strava Integration</UiCardTitle>
           <UiCardDescription>
-            We fetch your running and strength sessions from Strava to track your
-            targets automatically.
+            We fetch your running and strength sessions from Strava to track
+            your targets automatically.
           </UiCardDescription>
         </UiCardHeader>
         <UiCardContent class="flex-1 flex flex-col gap-4">
@@ -145,35 +146,44 @@ const distances = [
             v-if="config.connected"
             class="bg-success/5 border border-success/20 rounded-lg p-4 flex flex-col gap-1.5"
           >
-            <div class="flex items-center gap-2 text-success text-sm font-medium">
+            <div
+              class="flex items-center gap-2 text-success text-sm font-medium"
+            >
               <span class="w-2 h-2 rounded-full bg-success"></span>
               Connected to Strava
             </div>
-            <span class="text-xs text-muted-foreground">Athlete ID: {{ config.athleteId }}</span>
+            <span class="text-xs text-muted-foreground"
+              >Athlete ID: {{ config.athleteId }}</span
+            >
           </div>
 
-          <div
-            v-else
-            class="border border-border rounded-lg p-6 text-center"
-          >
+          <div v-else class="border border-border rounded-lg p-6 text-center">
             <p class="text-sm text-muted-foreground mb-4">
               No active Strava connection detected.
             </p>
-            <UiButton as="a" href="/api/strava/auth" class="w-full no-underline">
+            <UiButton
+              as="a"
+              href="/api/strava/auth"
+              class="w-full no-underline"
+            >
               Connect Strava Account ⚡
             </UiButton>
           </div>
 
-          <div class="bg-muted/50 border-l-2 border-muted-foreground/30 p-3 rounded-r-md text-xs text-muted-foreground leading-relaxed">
+          <div
+            class="bg-muted/50 border-l-2 border-muted-foreground/30 p-3 rounded-r-md text-xs text-muted-foreground leading-relaxed"
+          >
             <p>
               💡 Make sure you have registered your app at
               <a
                 href="https://www.strava.com/settings/api"
                 target="_blank"
                 class="text-primary no-underline font-medium hover:underline"
-              >Strava Developers</a>
+                >Strava Developers</a
+              >
               and configured client credentials in your local
-              <code class="bg-muted px-1 py-0.5 rounded text-xs">`.env`</code> file.
+              <code class="bg-muted px-1 py-0.5 rounded text-xs">`.env`</code>
+              file.
             </p>
           </div>
         </UiCardContent>
@@ -188,10 +198,15 @@ const distances = [
           </UiCardDescription>
         </UiCardHeader>
         <UiCardContent>
-          <form @submit.prevent="saveAndGeneratePlan" class="flex flex-col gap-5">
+          <form
+            @submit.prevent="saveAndGeneratePlan"
+            class="flex flex-col gap-5"
+          >
             <!-- Race Distance selector -->
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-muted-foreground">Target Distance</label>
+              <label class="text-sm font-medium text-muted-foreground"
+                >Target Distance</label
+              >
               <div class="grid grid-cols-2 gap-2">
                 <label
                   v-for="dist in distances"
@@ -218,7 +233,11 @@ const distances = [
 
             <!-- Target Date -->
             <div class="flex flex-col gap-2">
-              <label for="raceDate" class="text-sm font-medium text-muted-foreground">Race Date</label>
+              <label
+                for="raceDate"
+                class="text-sm font-medium text-muted-foreground"
+                >Race Date</label
+              >
               <UiInput
                 type="date"
                 id="raceDate"
@@ -230,7 +249,11 @@ const distances = [
 
             <!-- Athlete Fitness level -->
             <div class="flex flex-col gap-2">
-              <label for="currentLevel" class="text-sm font-medium text-muted-foreground">Current Fitness Level</label>
+              <label
+                for="currentLevel"
+                class="text-sm font-medium text-muted-foreground"
+                >Current Fitness Level</label
+              >
               <UiSelect id="currentLevel" v-model="config.currentLevel">
                 <option value="beginner">
                   Beginner (Started running recently, 1-2 runs/week)
@@ -246,7 +269,11 @@ const distances = [
 
             <!-- Coach Personality -->
             <div class="flex flex-col gap-2">
-              <label for="coachPersonality" class="text-sm font-medium text-muted-foreground">Coach Personality Style</label>
+              <label
+                for="coachPersonality"
+                class="text-sm font-medium text-muted-foreground"
+                >Coach Personality Style</label
+              >
               <UiSelect id="coachPersonality" v-model="config.coachPersonality">
                 <option value="encouraging">
                   Encouraging (Positive, motivating, supportive)
@@ -264,12 +291,17 @@ const distances = [
             <UiAlert v-if="!config.hasGeminiKey" variant="warning">
               <UiAlertDescription class="text-xs">
                 ⚠️ <strong>GEMINI_API_KEY</strong> is not configured in
-                <code class="bg-muted px-1 py-0.5 rounded text-xs">.env</code>. The app will generate a highly optimized static
-                program template for your race instead.
+                <code class="bg-muted px-1 py-0.5 rounded text-xs">.env</code>.
+                The app will generate a highly optimized static program template
+                for your race instead.
               </UiAlertDescription>
             </UiAlert>
 
-            <UiButton type="submit" :disabled="isSubmitting" class="w-full mt-1">
+            <UiButton
+              type="submit"
+              :disabled="isSubmitting"
+              class="w-full mt-1"
+            >
               <span v-if="isSubmitting">Generating Plan...</span>
               <span v-else>Generate Training Program 🚀</span>
             </UiButton>

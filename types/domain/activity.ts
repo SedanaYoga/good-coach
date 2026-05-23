@@ -10,34 +10,33 @@ export type StravaSportType =
   | 'Crossfit'
   | 'Yoga'
   | 'Walk'
-  | string;
+  | string
 
 export interface Activity {
-  id: number;
-  name: string;
-  sport_type: StravaSportType;
-  start_date: string;
-  distance: number;
-  moving_time: number;
-  elapsed_time: number;
-  average_speed: number;
-  average_heartrate: number | null;
-  max_heartrate: number | null;
-  matched_workout_id: string | null;
-  coach_feedback: string | null;
-  synced_at: string;
+  id: number
+  name: string
+  sport_type: StravaSportType
+  start_date: string
+  distance: number
+  moving_time: number
+  elapsed_time: number
+  average_speed: number
+  average_heartrate: number | null
+  max_heartrate: number | null
+  matched_workout_id: string | null
+  coach_feedback: string | null
+  synced_at: string
 }
 
 export interface StravaActivity {
-  id: number;
-  name: string;
-  sport_type: string;
-  start_date: string;
-  distance: number;
-  moving_time: number;
-  elapsed_time: number;
-  average_speed: number;
-  average_heartrate?: number;
-  max_heartrate?: number;
+  id: number
+  name: string
+  sport_type: string
+  start_date_local: string
+  distance: number
+  moving_time: number
+  elapsed_time: number
+  average_speed: number
+  average_heartrate?: number
+  max_heartrate?: number
 }
-

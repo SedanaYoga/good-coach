@@ -2,6 +2,7 @@ import { getValidAccessToken } from '../../utils/strava'
 import { saveActivity } from '../../utils/db'
 import { matchAndAnalyzeActivities } from '../../utils/coach'
 import type { StravaActivity } from 'types/domain/activity'
+import { formatDate } from '~~/utils/date'
 
 interface WebhookQuery {
   'hub.mode'?: string
@@ -68,7 +69,7 @@ export default defineEventHandler(async (event) => {
             id: act.id,
             name: act.name,
             sport_type: act.sport_type,
-            start_date: act.start_date.split('T')[0],
+            start_date: act.start_date_local,
             distance: act.distance,
             moving_time: act.moving_time,
             elapsed_time: act.elapsed_time,

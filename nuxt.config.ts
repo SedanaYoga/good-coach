@@ -6,6 +6,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   alias: {
     types: fileURLToPath(new URL('./types', import.meta.url)),
+    utils: fileURLToPath(new URL('./utils', import.meta.url)),
   },
   devtools: { enabled: true },
 
@@ -14,9 +15,7 @@ export default defineNuxtConfig({
   },
 
   vite: {
-    plugins: [
-      tailwindcss()
-    ]
+    plugins: [tailwindcss()],
   },
 
   runtimeConfig: {

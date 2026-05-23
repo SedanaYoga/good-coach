@@ -1,25 +1,25 @@
-import Database from 'better-sqlite3';
-import { join } from 'path';
-import type { AthleteConfig } from 'types/domain/athlete';
-import type { Activity } from 'types/domain/activity';
-import type { Workout } from 'types/domain/workout';
+import Database from 'better-sqlite3'
+import { join } from 'path'
+import type { AthleteConfig } from 'types/domain/athlete'
+import type { Activity } from 'types/domain/activity'
+import type { Workout } from 'types/domain/workout'
 
-let dbInstance: Database.Database | null = null;
+let dbInstance: Database.Database | null = null
 
 export function getDb() {
-  if (dbInstance) return dbInstance;
+  if (dbInstance) return dbInstance
 
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig()
   // Resolve database path relative to root if it is relative
-  const dbPath = config.dbPath.startsWith('.') 
-    ? join(process.cwd(), config.dbPath) 
-    : config.dbPath;
+  const dbPath = config.dbPath.startsWith('.')
+    ? join(process.cwd(), config.dbPath)
+    : config.dbPath
 
   // Ensure DB instance is created
-  dbInstance = new Database(dbPath, { verbose: console.log });
+  dbInstance = new Database(dbPath, { verbose: console.log })
 
   // Enable WAL mode for performance
-  dbInstance.pragma('journal_mode = WAL');
+  dbInstance.pragma('journal_mode = WAL')
 
   // Initialize tables
   dbInstance.exec(`
@@ -67,38 +67,46 @@ export function getDb() {
       activity_id INTEGER, -- linked strava activity
       FOREIGN KEY(activity_id) REFERENCES activities(id)
     );
-  `);
+  `)
 
-  return dbInstance;
+  return dbInstance
 }
 
 // Helper: Get Athlete Config
 export function getAthleteConfig(): AthleteConfig | undefined {
-  const db = getDb();
-  return db.prepare('SELECT * FROM athlete_config WHERE id = 1').get() as AthleteConfig | undefined;
+  const db = getDb()
+  return db.prepare('SELECT * FROM athlete_config WHERE id = 1').get() as
+    | AthleteConfig
+    | undefined
 }
 
 // Helper: Save Athlete Config
 export function saveAthleteConfig(config: Partial<AthleteConfig>): void {
-  const db = getDb();
-  const current = getAthleteConfig();
-  
+  const db = getDb()
+  const current = getAthleteConfig()
+
   if (current) {
-    const keys = Object.keys(config) as Array<keyof AthleteConfig>;
-    const setClause = keys.map(k => `${String(k)} = ?`).join(', ');
-    const values = keys.map(k => config[k] ?? null);
-    db.prepare(`UPDATE athlete_config SET ${setClause} WHERE id = 1`).run(...values);
+    const keys = Object.keys(config) as Array<keyof AthleteConfig>
+    const setClause = keys.map((k) => `${String(k)} = ?`).join(', ')
+    const values = keys.map((k) => config[k] ?? null)
+    db.prepare(`UPDATE athlete_config SET ${setClause} WHERE id = 1`).run(
+      ...values,
+    )
   } else {
-    const keys = ['id', ...Object.keys(config)];
-    const placeholders = keys.map(() => '?').join(', ');
-    const values = [1, ...Object.values(config)];
-    db.prepare(`INSERT INTO athlete_config (${keys.join(', ')}) VALUES (${placeholders})`).run(...values);
+    const keys = ['id', ...Object.keys(config)]
+    const placeholders = keys.map(() => '?').join(', ')
+    const values = [1, ...Object.values(config)]
+    db.prepare(
+      `INSERT INTO athlete_config (${keys.join(', ')}) VALUES (${placeholders})`,
+    ).run(...values)
   }
 }
 
 // Helper: Save Activity
-export function saveActivity(activity: Partial<Activity> & { id: number }): void {
-  const db = getDb();
+export function saveActivity(
+  activity: Partial<Activity> & { id: number },
+): void {
+  const db = getDb()
   const stmt = db.prepare(`
     INSERT INTO activities (
       id, name, sport_type, start_date, distance, moving_time, elapsed_time, 
@@ -112,8 +120,8 @@ export function saveActivity(activity: Partial<Activity> & { id: number }): void
       average_speed=excluded.average_speed,
       average_heartrate=excluded.average_heartrate,
       max_heartrate=excluded.max_heartrate
-  `);
-  
+  `)
+
   stmt.run(
     activity.id,
     activity.name || null,
@@ -127,50 +135,63 @@ export function saveActivity(activity: Partial<Activity> & { id: number }): void
     activity.max_heartrate || null,
     activity.matched_workout_id || null,
     activity.coach_feedback || null,
-    new Date().toISOString()
-  );
+    new Date().toISOString(),
+  )
 }
 
 // Helper: Get Activities
 export function getActivities(): Activity[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM activities ORDER BY start_date DESC').all() as Activity[];
+  const db = getDb()
+  return db
+    .prepare('SELECT * FROM activities ORDER BY start_date DESC')
+    .all() as Activity[]
 }
 
 // Helper: Save Workouts Plan
 export function saveWorkoutsPlan(workouts: Workout[]): void {
-  const db = getDb();
-  const deleteStmt = db.prepare('DELETE FROM workouts');
+  const db = getDb()
+  const deleteStmt = db.prepare('DELETE FROM workouts')
   const insertStmt = db.prepare(`
     INSERT INTO workouts (
       id, week_number, day_number, workout_type, title, description, distance_target, duration_target, status
     ) VALUES (
       ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
     )
-  `);
+  `)
 
   // Run in a transaction
   const transaction = db.transaction((plan: Workout[]) => {
-    deleteStmt.run();
+    deleteStmt.run()
     for (const w of plan) {
-      insertStmt.run(w.id, w.week_number, w.day_number, w.workout_type, w.title, w.description, w.distance_target || null, w.duration_target || null);
+      insertStmt.run(
+        w.id,
+        w.week_number,
+        w.day_number,
+        w.workout_type,
+        w.title,
+        w.description,
+        w.distance_target || null,
+        w.duration_target || null,
+      )
     }
-  });
+  })
 
-  transaction(workouts);
+  transaction(workouts)
 }
 
 // Helper: Update Workout
 export function updateWorkout(id: string, updates: Partial<Workout>): void {
-  const db = getDb();
-  const keys = Object.keys(updates) as Array<keyof Workout>;
-  const setClause = keys.map(k => `${String(k)} = ?`).join(', ');
-  const values = keys.map(k => updates[k] ?? null);
-  db.prepare(`UPDATE workouts SET ${setClause} WHERE id = ?`).run(...values, id);
+  const db = getDb()
+  const keys = Object.keys(updates) as Array<keyof Workout>
+  const setClause = keys.map((k) => `${String(k)} = ?`).join(', ')
+  const values = keys.map((k) => updates[k] ?? null)
+  db.prepare(`UPDATE workouts SET ${setClause} WHERE id = ?`).run(...values, id)
 }
 
 // Helper: Get Workouts Plan
 export function getWorkoutsPlan(): Workout[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM workouts ORDER BY week_number ASC, day_number ASC').all() as Workout[];
+  const db = getDb()
+  return db
+    .prepare('SELECT * FROM workouts ORDER BY week_number ASC, day_number ASC')
+    .all() as Workout[]
 }
