@@ -124,15 +124,15 @@ function getWeekTypeSummary(workouts: Workout[]): string {
           @click="toggleWeek(week.weekNumber)"
           class="w-full text-left flex justify-between items-center cursor-pointer py-5 border-b border-white/10 hover:text-white transition-colors group"
         >
-          <div
-            class="flex flex-row items-center gap-4"
-          >
+          <div class="flex flex-row items-center gap-4">
             <span
               class="font-display font-extrabold text-[0.75rem] tracking-wider bg-white/10 text-white px-2.5 py-0.5 rounded-[4px] group-hover:bg-primary group-hover:text-black transition-colors"
               >WEEK {{ week.weekNumber }}</span
             >
             <div>
-              <h3 class="text-base font-semibold text-text-main group-hover:text-white transition-colors">
+              <h3
+                class="text-base font-semibold text-text-main group-hover:text-white transition-colors"
+              >
                 Training Block {{ week.weekNumber }}
               </h3>
               <span class="text-xs text-text-muted">{{
@@ -141,12 +141,20 @@ function getWeekTypeSummary(workouts: Workout[]): string {
             </div>
           </div>
           <svg
-            :class="['w-4 h-4 text-text-muted transition-transform duration-200 group-hover:text-text-main', { 'rotate-180 text-white': expandedWeeks[week.weekNumber] }]"
+            :class="[
+              'w-4 h-4 text-text-muted transition-transform duration-200 group-hover:text-text-main',
+              { 'rotate-180 text-white': expandedWeeks[week.weekNumber] },
+            ]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -192,7 +200,9 @@ function getWeekTypeSummary(workouts: Workout[]): string {
                       >Day {{ w.day_number }} •
                       {{ formatDate(w.calculated_date) }}</span
                     >
-                    <h4 class="text-base font-semibold tracking-tight">{{ w.title }}</h4>
+                    <h4 class="text-base font-semibold tracking-tight">
+                      {{ w.title }}
+                    </h4>
                   </div>
                   <div>
                     <span
@@ -222,7 +232,7 @@ function getWeekTypeSummary(workouts: Workout[]): string {
 
                 <!-- Targets -->
                 <div
-                  class="flex flex-wrap gap-4 text-[0.8rem] text-text-muted bg-white/1.5 px-3 py-2 rounded-[6px] border border-dashed border-white/5"
+                  class="flex flex-wrap gap-4 text-[0.8rem] text-text-muted bg-white/1.5 px-3 py-2 rounded-sm border border-dashed border-white/5"
                   v-if="w.distance_target || w.duration_target"
                 >
                   <span class="font-semibold text-text-main">Target:</span>
