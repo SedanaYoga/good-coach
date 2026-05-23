@@ -2,12 +2,27 @@ import { getValidAccessToken } from '../../utils/strava';
 import { saveActivity } from '../../utils/db';
 import { matchAndAnalyzeActivities } from '../../utils/coach';
 
+interface WebhookQuery {
+  'hub.mode'?: string;
+  'hub.verify_token'?: string;
+  'hub.challenge'?: string;
+}
+
+interface WebhookBody {
+  object_type?: string;
+  aspect_type?: string;
+  object_id?: number;
+  owner_id?: number;
+  subscription_id?: number;
+  updates?: any;
+}
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
   // GET: Subscription validation challenge
   if (event.method === 'GET') {
-    const query = getQuery(event);
+    const query = getQuery<WebhookQuery>(event);
     const mode = query['hub.mode'];
     const token = query['hub.verify_token'];
     const challenge = query['hub.challenge'];
@@ -25,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
   // POST: Webhook event callback
   if (event.method === 'POST') {
-    const body = await readBody(event);
+    const body = await readBody<WebhookBody>(event);
     console.log('Received Strava webhook event:', body);
 
     // Process activity creation in the background

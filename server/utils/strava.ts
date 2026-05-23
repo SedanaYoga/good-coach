@@ -1,64 +1,75 @@
-import { getAthleteConfig, saveAthleteConfig, saveActivity } from './db';
-import { matchAndAnalyzeActivities } from './coach';
+import { getAthleteConfig, saveAthleteConfig, saveActivity } from './db'
+import { matchAndAnalyzeActivities } from './coach'
 
-
-export async function getValidAccessToken() {
-  const config = useRuntimeConfig();
-  const athlete = getAthleteConfig();
+export async function getValidAccessToken(): Promise<string> {
+  const config = useRuntimeConfig()
+  const athlete = getAthleteConfig()
 
   if (!athlete || !athlete.strava_refresh_token) {
-    throw new Error('Strava not connected. Please connect your account in Setup.');
+    throw new Error(
+      'Strava not connected. Please connect your account in Setup.',
+    )
   }
 
-  const nowUnix = Math.floor(Date.now() / 1000);
-  
+  const nowUnix = Math.floor(Date.now() / 1000)
+
   // If token is valid for another 5 minutes, return it
-  if (athlete.strava_expires_at && athlete.strava_expires_at > nowUnix + 300) {
-    return athlete.strava_access_token;
+  if (
+    athlete.strava_expires_at &&
+    athlete.strava_expires_at > nowUnix + 300 &&
+    athlete.strava_access_token
+  ) {
+    return athlete.strava_access_token
   }
 
   // Token is expired or about to expire, refresh it
-  console.log('Strava access token expired, refreshing...');
+  console.log('Strava access token expired, refreshing...')
   try {
-    const refreshResponse: any = await $fetch('https://www.strava.com/oauth/token', {
-      method: 'POST',
-      body: {
-        client_id: config.public.stravaClientId,
-        client_secret: config.stravaClientSecret,
-        grant_type: 'refresh_token',
-        refresh_token: athlete.strava_refresh_token
-      }
-    });
+    const refreshResponse: any = await $fetch(
+      'https://www.strava.com/oauth/token',
+      {
+        method: 'POST',
+        body: {
+          client_id: config.public.stravaClientId,
+          client_secret: config.stravaClientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: athlete.strava_refresh_token,
+        },
+      },
+    )
 
-    const newAccessToken = refreshResponse.access_token;
-    const newRefreshToken = refreshResponse.refresh_token;
-    const newExpiresAt = refreshResponse.expires_at;
+    const newAccessToken = refreshResponse.access_token
+    const newRefreshToken = refreshResponse.refresh_token
+    const newExpiresAt = refreshResponse.expires_at
 
     saveAthleteConfig({
       strava_access_token: newAccessToken,
       strava_refresh_token: newRefreshToken,
-      strava_expires_at: newExpiresAt
-    });
+      strava_expires_at: newExpiresAt,
+    })
 
-    return newAccessToken;
+    return newAccessToken
   } catch (err: any) {
-    console.error('Failed to refresh Strava token:', err);
-    throw new Error('Failed to refresh Strava access token');
+    console.error('Failed to refresh Strava token:', err)
+    throw new Error('Failed to refresh Strava access token')
   }
 }
 
-export async function syncStravaActivities() {
-  const token = await getValidAccessToken();
+export async function syncStravaActivities(): Promise<number> {
+  const token = await getValidAccessToken()
 
   // Fetch last 30 activities from Strava
-  const activitiesResponse: any[] = await $fetch('https://www.strava.com/api/v3/athlete/activities', {
-    headers: {
-      Authorization: `Bearer ${token}`
+  const activitiesResponse: any[] = await $fetch(
+    'https://www.strava.com/api/v3/athlete/activities',
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      query: {
+        per_page: 30,
+      },
     },
-    query: {
-      per_page: 30
-    }
-  });
+  )
 
   // Save synced activities to SQLite database
   for (const act of activitiesResponse) {
@@ -72,13 +83,12 @@ export async function syncStravaActivities() {
       elapsed_time: act.elapsed_time,
       average_speed: act.average_speed,
       average_heartrate: act.average_heartrate,
-      max_heartrate: act.max_heartrate
-    });
+      max_heartrate: act.max_heartrate,
+    })
   }
 
   // Match activities to workouts and generate AI feedback
-  await matchAndAnalyzeActivities();
+  await matchAndAnalyzeActivities()
 
-  return activitiesResponse.length;
+  return activitiesResponse.length
 }
-

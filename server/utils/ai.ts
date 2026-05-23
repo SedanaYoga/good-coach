@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAthleteConfig } from './db';
+import type { Workout, WorkoutType, WorkoutStatus } from '../../types/domain/workout';
+import type { Activity } from '../../types/domain/activity';
 
 let aiInstance: GoogleGenerativeAI | null = null;
 
@@ -14,7 +16,7 @@ function getAI() {
   return aiInstance;
 }
 
-export async function generateTrainingPlan(raceDistance: string, raceDate: string, currentLevel: string) {
+export async function generateTrainingPlan(raceDistance: string, raceDate: string, currentLevel: string): Promise<Workout[]> {
   const ai = getAI();
   const weeksDiff = calculateWeeksUntilDate(raceDate);
 
@@ -23,8 +25,8 @@ export async function generateTrainingPlan(raceDistance: string, raceDate: strin
     return generateFallbackPlan(raceDistance, weeksDiff);
   }
 
-  const athleteConfig = getAthleteConfig() || {};
-  const personality = athleteConfig.coach_personality || 'encouraging';
+  const athleteConfig = getAthleteConfig();
+  const personality = athleteConfig?.coach_personality || 'encouraging';
 
   const prompt = `
 You are a professional running coach with a "${personality}" personality.
@@ -66,10 +68,10 @@ Provide the output strictly as a JSON array of objects with the following format
   }
 }
 
-export async function generateCoachFeedback(workout: any, activity: any) {
+export async function generateCoachFeedback(workout: Workout, activity: Activity): Promise<string> {
   const ai = getAI();
-  const athleteConfig = getAthleteConfig() || {};
-  const personality = athleteConfig.coach_personality || 'encouraging';
+  const athleteConfig = getAthleteConfig();
+  const personality = athleteConfig?.coach_personality || 'encouraging';
 
   if (!ai) {
     return generateFallbackFeedback(workout, activity);
@@ -122,8 +124,8 @@ export function calculateWeeksUntilDate(dateStr: string) {
   return Math.max(1, Math.ceil(diffDays / 7));
 }
 
-function generateFallbackPlan(raceDistance: string, weeks: number) {
-  const plan = [];
+function generateFallbackPlan(raceDistance: string, weeks: number): Workout[] {
+  const plan: Workout[] = [];
   for (let w = 1; w <= weeks; w++) {
     const isTaper = w === weeks;
 
@@ -132,7 +134,7 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d1`,
       week_number: w,
       day_number: 1,
-      workout_type: 'easy_run',
+      workout_type: 'easy_run' as WorkoutType,
       title: `Easy Run`,
       description: `Run at an easy, conversational pace. Focus on relaxed breathing.`,
       distance_target: isTaper ? 3000 : 4000 + (w % 3) * 500,
@@ -144,7 +146,7 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d2`,
       week_number: w,
       day_number: 2,
-      workout_type: 'rest',
+      workout_type: 'rest' as WorkoutType,
       title: 'Rest Day',
       description: 'A complete day of rest to allow your muscles to recover.',
       distance_target: null,
@@ -157,7 +159,7 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d3`,
       week_number: w,
       day_number: 3,
-      workout_type: isInterval ? 'interval' : 'strength',
+      workout_type: (isInterval ? 'interval' : 'strength') as WorkoutType,
       title: isInterval ? 'Interval Training' : 'Strength Training',
       description: isInterval
         ? 'Warm up 10 mins. Run 5x 400m fast with 90s recovery. Cool down 5 mins.'
@@ -171,7 +173,7 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d4`,
       week_number: w,
       day_number: 4,
-      workout_type: 'rest',
+      workout_type: 'rest' as WorkoutType,
       title: 'Rest Day',
       description: 'Relax. Do some light stretching if needed.',
       distance_target: null,
@@ -187,7 +189,7 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d5`,
       week_number: w,
       day_number: 5,
-      workout_type: 'long_run',
+      workout_type: 'long_run' as WorkoutType,
       title: `Long Run`,
       description: `Run slow and steady. This builds your cardiovascular endurance.`,
       distance_target: longRunDist,
@@ -199,7 +201,7 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d6`,
       week_number: w,
       day_number: 6,
-      workout_type: 'rest',
+      workout_type: 'rest' as WorkoutType,
       title: 'Rest Day',
       description: 'Rest before starting next week.',
       distance_target: null,
@@ -211,17 +213,18 @@ function generateFallbackPlan(raceDistance: string, weeks: number) {
       id: `w${w}d7`,
       week_number: w,
       day_number: 7,
-      workout_type: 'strength',
+      workout_type: 'strength' as WorkoutType,
       title: 'Core & Mobility',
       description: 'Planks, glute bridges, and full body stretching to stay injury-free.',
       distance_target: null,
-      duration_target: 1800
+      duration_target: null
     });
+
   }
   return plan;
 }
 
-function generateFallbackFeedback(workout: any, activity: any) {
+function generateFallbackFeedback(workout: Workout, activity: Activity): string {
   const actualDistKm = (activity.distance / 1000).toFixed(2);
   if (workout.workout_type === 'rest') {
     return `You completed a ${actualDistKm} km run on a scheduled rest day. Recovery is key to avoiding injury, so make sure to get some rest!`;

@@ -1,6 +1,6 @@
 import { syncStravaActivities } from '../../utils/strava';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<{ success: boolean; count: number }> => {
   try {
     const count = await syncStravaActivities();
 

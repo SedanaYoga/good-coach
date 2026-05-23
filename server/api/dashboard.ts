@@ -1,7 +1,8 @@
 import { getAthleteConfig, getActivities, getWorkoutsPlan } from '../utils/db';
 import { getWorkoutDate } from '../utils/coach';
+import type { DashboardResponse } from '../../types/domain/coach';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<DashboardResponse> => {
   const athlete = getAthleteConfig();
   if (!athlete) {
     return { setupRequired: true };

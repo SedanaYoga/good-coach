@@ -2,6 +2,7 @@ import { getAthleteConfig, saveAthleteConfig, saveWorkoutsPlan } from '../utils/
 import { generateTrainingPlan } from '../utils/ai';
 import { matchAndAnalyzeActivities } from '../utils/coach';
 import { syncStravaActivities } from '../utils/strava';
+import type { SetupRequest, SetupConfigResponse } from '../../types/domain/athlete';
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
     const athlete = getAthleteConfig();
     const runtimeConfig = useRuntimeConfig();
 
-    return {
+    const response: SetupConfigResponse = {
       connected: !!(athlete?.strava_refresh_token),
       athleteId: athlete?.strava_athlete_id || null,
       raceDistance: athlete?.race_distance || '10K',
@@ -20,11 +21,12 @@ export default defineEventHandler(async (event) => {
       currentLevel: athlete?.current_level || 'beginner',
       hasGeminiKey: !!(runtimeConfig.geminiApiKey)
     };
+    return response;
   }
 
   // POST: Update athlete config and trigger training plan generation
   if (method === 'POST') {
-    const body = await readBody(event);
+    const body = await readBody<SetupRequest>(event);
     
     if (!body.raceDistance || !body.raceDate) {
       throw createError({
@@ -43,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
     // Generate training plan (utilizes Gemini or rule-based fallback)
     console.log(`Setup: Generating plan for ${body.raceDistance} on ${body.raceDate}`);
-    const workouts = await generateTrainingPlan(body.raceDistance, body.raceDate, body.currentLevel);
+    const workouts = await generateTrainingPlan(body.raceDistance, body.raceDate, body.currentLevel || 'beginner');
     saveWorkoutsPlan(workouts);
 
     // Try to sync activities and match them if connected to Strava

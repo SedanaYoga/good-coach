@@ -6,8 +6,9 @@ import {
   getDb,
 } from './db'
 import { generateCoachFeedback } from './ai'
+import type { Workout } from '../../types/domain/workout'
 
-export async function matchAndAnalyzeActivities() {
+export async function matchAndAnalyzeActivities(): Promise<void> {
   const athlete = getAthleteConfig()
   if (!athlete || !athlete.race_date) return
 
@@ -36,7 +37,7 @@ export async function matchAndAnalyzeActivities() {
     const actDate = act.start_date // YYYY-MM-DD
     const candidateWorkouts = getCandidateWorkoutsForDate(workouts, actDate)
 
-    let matchedWorkout = null
+    let matchedWorkout: Workout | null = null
     for (const w of candidateWorkouts) {
       if (w.status === 'completed') continue
 
@@ -115,7 +116,10 @@ export function getWorkoutDate(
   return wDate.toISOString().split('T')[0] || ''
 }
 
-function getCandidateWorkoutsForDate(workouts: any[], dateStr: string): any[] {
+function getCandidateWorkoutsForDate(
+  workouts: Workout[],
+  dateStr: string,
+): Workout[] {
   const targetTime = new Date(dateStr + 'T12:00:00').getTime()
   const oneDayMs = 24 * 60 * 60 * 1000
 

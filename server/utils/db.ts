@@ -1,5 +1,8 @@
 import Database from 'better-sqlite3';
 import { join } from 'path';
+import type { AthleteConfig } from '../../types/domain/athlete';
+import type { Activity } from '../../types/domain/activity';
+import type { Workout } from '../../types/domain/workout';
 
 let dbInstance: Database.Database | null = null;
 
@@ -70,20 +73,20 @@ export function getDb() {
 }
 
 // Helper: Get Athlete Config
-export function getAthleteConfig() {
+export function getAthleteConfig(): AthleteConfig | undefined {
   const db = getDb();
-  return db.prepare('SELECT * FROM athlete_config WHERE id = 1').get() as any;
+  return db.prepare('SELECT * FROM athlete_config WHERE id = 1').get() as AthleteConfig | undefined;
 }
 
 // Helper: Save Athlete Config
-export function saveAthleteConfig(config: any) {
+export function saveAthleteConfig(config: Partial<AthleteConfig>): void {
   const db = getDb();
   const current = getAthleteConfig();
   
   if (current) {
     const keys = Object.keys(config);
     const setClause = keys.map(k => `${k} = ?`).join(', ');
-    const values = keys.map(k => config[k]);
+    const values = keys.map(k => (config as any)[k]);
     db.prepare(`UPDATE athlete_config SET ${setClause} WHERE id = 1`).run(...values);
   } else {
     const keys = ['id', ...Object.keys(config)];
@@ -94,7 +97,7 @@ export function saveAthleteConfig(config: any) {
 }
 
 // Helper: Save Activity
-export function saveActivity(activity: any) {
+export function saveActivity(activity: Partial<Activity> & { id: number }): void {
   const db = getDb();
   const stmt = db.prepare(`
     INSERT INTO activities (
@@ -113,13 +116,13 @@ export function saveActivity(activity: any) {
   
   stmt.run(
     activity.id,
-    activity.name,
-    activity.sport_type,
-    activity.start_date,
-    activity.distance,
-    activity.moving_time,
-    activity.elapsed_time,
-    activity.average_speed,
+    activity.name || null,
+    activity.sport_type || null,
+    activity.start_date || null,
+    activity.distance || 0,
+    activity.moving_time || 0,
+    activity.elapsed_time || 0,
+    activity.average_speed || 0,
     activity.average_heartrate || null,
     activity.max_heartrate || null,
     activity.matched_workout_id || null,
@@ -129,13 +132,13 @@ export function saveActivity(activity: any) {
 }
 
 // Helper: Get Activities
-export function getActivities() {
+export function getActivities(): Activity[] {
   const db = getDb();
-  return db.prepare('SELECT * FROM activities ORDER BY start_date DESC').all() as any[];
+  return db.prepare('SELECT * FROM activities ORDER BY start_date DESC').all() as Activity[];
 }
 
 // Helper: Save Workouts Plan
-export function saveWorkoutsPlan(workouts: any[]) {
+export function saveWorkoutsPlan(workouts: Workout[]): void {
   const db = getDb();
   const deleteStmt = db.prepare('DELETE FROM workouts');
   const insertStmt = db.prepare(`
@@ -147,7 +150,7 @@ export function saveWorkoutsPlan(workouts: any[]) {
   `);
 
   // Run in a transaction
-  const transaction = db.transaction((plan) => {
+  const transaction = db.transaction((plan: Workout[]) => {
     deleteStmt.run();
     for (const w of plan) {
       insertStmt.run(w.id, w.week_number, w.day_number, w.workout_type, w.title, w.description, w.distance_target || null, w.duration_target || null);
@@ -158,16 +161,16 @@ export function saveWorkoutsPlan(workouts: any[]) {
 }
 
 // Helper: Update Workout
-export function updateWorkout(id: string, updates: any) {
+export function updateWorkout(id: string, updates: Partial<Workout>): void {
   const db = getDb();
   const keys = Object.keys(updates);
   const setClause = keys.map(k => `${k} = ?`).join(', ');
-  const values = keys.map(k => updates[k]);
+  const values = keys.map(k => (updates as any)[k]);
   db.prepare(`UPDATE workouts SET ${setClause} WHERE id = ?`).run(...values, id);
 }
 
 // Helper: Get Workouts Plan
-export function getWorkoutsPlan() {
+export function getWorkoutsPlan(): Workout[] {
   const db = getDb();
-  return db.prepare('SELECT * FROM workouts ORDER BY week_number ASC, day_number ASC').all() as any[];
+  return db.prepare('SELECT * FROM workouts ORDER BY week_number ASC, day_number ASC').all() as Workout[];
 }

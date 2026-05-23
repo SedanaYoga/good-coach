@@ -1,15 +1,17 @@
-<script setup>
-const dashboardData = ref(null)
-const isLoading = ref(true)
-const isSyncing = ref(false)
-const syncError = ref(null)
-const syncSuccess = ref(false)
+<script setup lang="ts">
+import type { DashboardResponse } from '../../types/domain/coach'
+
+const dashboardData = ref<DashboardResponse | null>(null)
+const isLoading = ref<boolean>(true)
+const isSyncing = ref<boolean>(false)
+const syncError = ref<string | null>(null)
+const syncSuccess = ref<boolean>(false)
 
 const router = useRouter()
 
 async function fetchDashboard(triggerBackgroundSync = false) {
   try {
-    const data = await $fetch('/api/dashboard')
+    const data = await $fetch<DashboardResponse>('/api/dashboard')
     if (data.setupRequired) {
       router.push('/setup')
       return
@@ -33,7 +35,7 @@ async function triggerSync(silent = false) {
   }
 
   try {
-    const res = await $fetch('/api/strava/sync', { method: 'POST' })
+    const res = await $fetch<{ success: boolean; count: number }>('/api/strava/sync', { method: 'POST' })
     if (res.success) {
       if (!silent) {
         syncSuccess.value = true
@@ -41,10 +43,10 @@ async function triggerSync(silent = false) {
           syncSuccess.value = false
         }, 3000)
       }
-      const data = await $fetch('/api/dashboard')
+      const data = await $fetch<DashboardResponse>('/api/dashboard')
       dashboardData.value = data
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Sync failed:', err)
     if (!silent) {
       syncError.value =
@@ -62,12 +64,12 @@ onMounted(() => {
 })
 
 // Format Helper
-function formatDistance(meters) {
+function formatDistance(meters: number | null | undefined): string {
   if (!meters) return '0.0 km'
   return `${(meters / 1000).toFixed(2)} km`
 }
 
-function formatDuration(seconds) {
+function formatDuration(seconds: number | null | undefined): string {
   if (!seconds) return 'N/A'
   const mins = Math.floor(seconds / 60)
   if (mins < 60) return `${mins} mins`
@@ -76,7 +78,7 @@ function formatDuration(seconds) {
   return `${hrs}h ${remainingMins}m`
 }
 
-function formatPace(speedMps) {
+function formatPace(speedMps: number | null | undefined): string {
   if (!speedMps || speedMps === 0) return '00:00 /km'
   // Pace is minutes per kilometer
   const paceSecondsPerKm = 1000 / speedMps
@@ -85,7 +87,7 @@ function formatPace(speedMps) {
   return `${minutes}:${seconds.toString().padStart(2, '0')} /km`
 }
 
-function formatDate(dateStr) {
+function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return ''
   const date = new Date(dateStr + 'T12:00:00')
   return date.toLocaleDateString('en-US', {
@@ -96,8 +98,8 @@ function formatDate(dateStr) {
 }
 
 // Active coach feedback toggle state
-const expandedFeedback = ref({})
-function toggleFeedback(activityId) {
+const expandedFeedback = ref<Record<number, boolean>>({})
+function toggleFeedback(activityId: number) {
   expandedFeedback.value[activityId] = !expandedFeedback.value[activityId]
 }
 </script>
@@ -117,7 +119,7 @@ function toggleFeedback(activityId) {
       </div>
       <div class="sync-actions">
         <button
-          @click="triggerSync"
+          @click="() => triggerSync()"
           class="btn-secondary sync-btn"
           :disabled="isSyncing || !dashboardData.connected"
         >
@@ -266,7 +268,7 @@ function toggleFeedback(activityId) {
       <div class="side-column">
         <!-- Progress Metrics -->
         <div class="glass-card metrics-card">
-          <h3>Target: {{ dashboardData.athlete.raceDistance }} Race</h3>
+          <h3>Target: {{ dashboardData.athlete?.raceDistance }} Race</h3>
           <div class="countdown-stat">
             <span class="countdown-number">{{
               dashboardData.daysUntilRace
@@ -312,7 +314,7 @@ function toggleFeedback(activityId) {
           </p>
 
           <div
-            v-if="dashboardData.recentActivities.length > 0"
+            v-if="dashboardData.recentActivities && dashboardData.recentActivities.length > 0"
             class="activities-list"
           >
             <div

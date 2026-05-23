@@ -1,72 +1,84 @@
-<script setup>
-const planData = ref(null);
-const isLoading = ref(true);
+<script setup lang="ts">
+import type { Workout } from '../../types/domain/workout'
 
-const expandedWeeks = ref({});
+interface PlanResponse {
+  plan: {
+    weekNumber: number;
+    workouts: Workout[];
+  }[];
+  totalWeeks: number;
+  raceDate: string;
+  raceDistance: string;
+}
 
-const router = useRouter();
+const planData = ref<PlanResponse | null>(null)
+const isLoading = ref<boolean>(true)
+
+const expandedWeeks = ref<Record<number, boolean>>({})
+
+const router = useRouter()
 
 async function fetchPlan() {
   try {
-    const data = await $fetch('/api/plan');
+    const data = await $fetch<PlanResponse>('/api/plan')
     if (data.plan.length === 0) {
-      router.push('/setup');
-      return;
+      router.push('/setup')
+      return
     }
-    planData.value = data;
+    planData.value = data
     
     // Expand week 1 by default
     if (data.plan.length > 0) {
-      expandedWeeks.value[1] = true;
+      expandedWeeks.value[1] = true
     }
   } catch (err) {
-    console.error('Failed to fetch plan data:', err);
+    console.error('Failed to fetch plan data:', err)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 
 onMounted(() => {
-  fetchPlan();
-});
+  fetchPlan()
+})
 
-function toggleWeek(weekNumber) {
-  expandedWeeks.value[weekNumber] = !expandedWeeks.value[weekNumber];
+function toggleWeek(weekNumber: number) {
+  expandedWeeks.value[weekNumber] = !expandedWeeks.value[weekNumber]
 }
 
 // Helpers
-function formatDistance(meters) {
-  if (!meters) return null;
-  return `${(meters / 1000).toFixed(2)} km`;
+function formatDistance(meters: number | null | undefined): string | null {
+  if (!meters) return null
+  return `${(meters / 1000).toFixed(2)} km`
 }
 
-function formatDuration(seconds) {
-  if (!seconds) return null;
-  const mins = Math.floor(seconds / 60);
-  if (mins < 60) return `${mins} mins`;
-  const hrs = Math.floor(mins / 60);
-  const remainingMins = mins % 60;
-  return `${hrs}h ${remainingMins}m`;
+function formatDuration(seconds: number | null | undefined): string | null {
+  if (!seconds) return null
+  const mins = Math.floor(seconds / 60)
+  if (mins < 60) return `${mins} mins`
+  const hrs = Math.floor(mins / 60)
+  const remainingMins = mins % 60
+  return `${hrs}h ${remainingMins}m`
 }
 
-function formatPace(speedMps) {
-  if (!speedMps || speedMps === 0) return '00:00 /km';
-  const paceSecondsPerKm = 1000 / speedMps;
-  const minutes = Math.floor(paceSecondsPerKm / 60);
-  const seconds = Math.round(paceSecondsPerKm % 60);
-  return `${minutes}:${seconds.toString().padStart(2, '0')} /km`;
+function formatPace(speedMps: number | null | undefined): string {
+  if (!speedMps || speedMps === 0) return '00:00 /km'
+  const paceSecondsPerKm = 1000 / speedMps
+  const minutes = Math.floor(paceSecondsPerKm / 60)
+  const seconds = Math.round(paceSecondsPerKm % 60)
+  return `${minutes}:${seconds.toString().padStart(2, '0')} /km`
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr + 'T12:00:00');
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr + 'T12:00:00')
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-function getWeekTypeSummary(workouts) {
-  const runs = workouts.filter(w => ['easy_run', 'long_run', 'interval'].includes(w.workout_type)).length;
-  const strength = workouts.filter(w => w.workout_type === 'strength').length;
-  return `${runs} Runs, ${strength} Strength`;
+function getWeekTypeSummary(workouts: Workout[]): string {
+  const runs = workouts.filter(w => ['easy_run', 'long_run', 'interval'].includes(w.workout_type)).length
+  const strength = workouts.filter(w => w.workout_type === 'strength').length
+  return `${runs} Runs, ${strength} Strength`
 }
 </script>
 

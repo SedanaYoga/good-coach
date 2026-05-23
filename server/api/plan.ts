@@ -1,5 +1,7 @@
 import { getAthleteConfig, getWorkoutsPlan, getActivities } from '../utils/db';
 import { getWorkoutDate } from '../utils/coach';
+import type { Workout } from '../../types/domain/workout';
+import type { Activity } from '../../types/domain/activity';
 
 export default defineEventHandler(async (event) => {
   const athlete = getAthleteConfig();
@@ -7,8 +9,8 @@ export default defineEventHandler(async (event) => {
     return { plan: [], totalWeeks: 0 };
   }
 
-  const workouts = getWorkoutsPlan();
-  const activities = getActivities();
+  const workouts: Workout[] = getWorkoutsPlan();
+  const activities: Activity[] = getActivities();
 
   if (workouts.length === 0) {
     return { plan: [], totalWeeks: 0 };
@@ -17,13 +19,13 @@ export default defineEventHandler(async (event) => {
   const totalWeeks = Math.max(...workouts.map(w => w.week_number));
   
   // Map activities by ID for fast lookup
-  const activityMap = new Map<number, any>();
+  const activityMap = new Map<number, Activity>();
   for (const act of activities) {
     activityMap.set(act.id, act);
   }
 
   // Group workouts by week number
-  const planByWeek: Record<number, any[]> = {};
+  const planByWeek: Record<number, Workout[]> = {};
 
   for (const w of workouts) {
     w.calculated_date = getWorkoutDate(athlete.race_date, totalWeeks, w.week_number, w.day_number);

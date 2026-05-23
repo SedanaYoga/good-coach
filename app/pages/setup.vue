@@ -1,96 +1,113 @@
-<script setup>
-const route = useRoute();
-const router = useRouter();
+<script setup lang="ts">
+import type {
+  SetupConfigResponse,
+  SetupRequest,
+} from '../../types/domain/athlete'
 
-const config = ref({
+const route = useRoute()
+const router = useRouter()
+
+const config = ref<SetupConfigResponse>({
   connected: false,
   athleteId: null,
   raceDistance: '10K',
   raceDate: '',
   coachPersonality: 'encouraging',
   currentLevel: 'beginner',
-  hasGeminiKey: false
-});
+  hasGeminiKey: false,
+})
 
-const isSubmitting = ref(false);
-const errorMsg = ref(null);
-const successMsg = ref(null);
+const isSubmitting = ref(false)
+const errorMsg = ref<string | null>(null)
+const successMsg = ref<string | null>(null)
 
 // Fetch existing setup configurations
 async function fetchConfig() {
   try {
-    const data = await $fetch('/api/setup');
-    config.value = { ...config.value, ...data };
+    const data = await $fetch<SetupConfigResponse>('/api/setup')
+    config.value = { ...config.value, ...data }
   } catch (err) {
-    console.error('Failed to load setup config:', err);
+    console.error('Failed to load setup config:', err)
   }
 }
 
 onMounted(() => {
-  fetchConfig();
-  
+  fetchConfig()
+
   // Handle query parameter messages
   if (route.query.auth === 'success') {
-    successMsg.value = 'Successfully connected to Strava!';
+    successMsg.value = 'Successfully connected to Strava!'
     // Clean up url parameters
-    router.replace({ query: {} });
+    router.replace({ query: {} })
   } else if (route.query.error === 'missing_keys') {
-    errorMsg.value = 'Config Error: Please specify your STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in the .env file.';
-    router.replace({ query: {} });
+    errorMsg.value =
+      'Config Error: Please specify your STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in the .env file.'
+    router.replace({ query: {} })
   } else if (route.query.error === 'token_exchange_failed') {
-    errorMsg.value = 'OAuth Error: Failed to exchange authorization code with Strava. Please try again.';
-    router.replace({ query: {} });
+    errorMsg.value =
+      'OAuth Error: Failed to exchange authorization code with Strava. Please try again.'
+    router.replace({ query: {} })
   }
-});
+})
 
 async function saveAndGeneratePlan() {
   if (!config.value.raceDate) {
-    errorMsg.value = 'Please select a target race date.';
-    return;
+    errorMsg.value = 'Please select a target race date.'
+    return
   }
 
-  isSubmitting.value = true;
-  errorMsg.value = null;
-  successMsg.value = null;
+  isSubmitting.value = true
+  errorMsg.value = null
+  successMsg.value = null
 
   try {
-    const res = await $fetch('/api/setup', {
-      method: 'POST',
-      body: {
-        raceDistance: config.value.raceDistance,
-        raceDate: config.value.raceDate,
-        coachPersonality: config.value.coachPersonality,
-        currentLevel: config.value.currentLevel
-      }
-    });
+    const body: SetupRequest = {
+      raceDistance: config.value.raceDistance,
+      raceDate: config.value.raceDate,
+      coachPersonality: config.value.coachPersonality,
+      currentLevel: config.value.currentLevel,
+    }
+
+    const res = await $fetch<{ success: boolean; workoutsCount: number }>(
+      '/api/setup',
+      {
+        method: 'POST',
+        body,
+      },
+    )
 
     if (res.success) {
-      successMsg.value = `Successfully generated a ${res.workoutsCount}-session training program! Redirecting to Dashboard...`;
+      successMsg.value = `Successfully generated a ${res.workoutsCount}-session training program! Redirecting to Dashboard...`
       setTimeout(() => {
-        router.push('/');
-      }, 2000);
+        router.push('/')
+      }, 2000)
     }
-  } catch (err) {
-    console.error('Plan generation failed:', err);
-    errorMsg.value = err.data?.statusMessage || 'Failed to generate training plan. Please check your setup parameters.';
+  } catch (err: any) {
+    console.error('Plan generation failed:', err)
+    errorMsg.value =
+      err.data?.statusMessage ||
+      'Failed to generate training plan. Please check your setup parameters.'
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
 }
 
 // Helper: check if date is in the past
 const minDate = computed(() => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split('T')[0];
-});
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  return tomorrow.toISOString().split('T')[0] || ''
+})
 </script>
 
 <template>
   <div class="setup-container animate-fade-in">
     <div class="setup-header">
       <h1>Race Preparation Wizard</h1>
-      <p class="subtitle">Set your target, connect your Strava account, and let the AI Coach build your custom plan.</p>
+      <p class="subtitle">
+        Set your target, connect your Strava account, and let the AI Coach build
+        your custom plan.
+      </p>
     </div>
 
     <!-- Alerts -->
@@ -107,8 +124,11 @@ const minDate = computed(() => {
       <!-- Connection Status Card -->
       <div class="glass-card connection-card">
         <h2>1. Strava Integration</h2>
-        <p class="card-desc">We fetch your running and strength sessions from Strava to track your targets automatically.</p>
-        
+        <p class="card-desc">
+          We fetch your running and strength sessions from Strava to track your
+          targets automatically.
+        </p>
+
         <div v-if="config.connected" class="connected-badge">
           <div class="badge-status">
             <span class="dot-active"></span>
@@ -116,43 +136,66 @@ const minDate = computed(() => {
           </div>
           <span class="subtext">Athlete ID: {{ config.athleteId }}</span>
         </div>
-        
+
         <div v-else class="disconnected-badge">
           <p class="warning-text">No active Strava connection detected.</p>
           <a href="/api/strava/auth" class="btn-primary connect-btn">
             Connect Strava Account ⚡
           </a>
         </div>
-        
+
         <div class="info-note">
           <span class="note-icon">💡</span>
-          <p>Make sure you have registered your app at <a href="https://www.strava.com/settings/api" target="_blank" class="link-inline">Strava Developers</a> and configured client credentials in your local <code>.env</code> file.</p>
+          <p>
+            Make sure you have registered your app at
+            <a
+              href="https://www.strava.com/settings/api"
+              target="_blank"
+              class="link-inline"
+              >Strava Developers</a
+            >
+            and configured client credentials in your local
+            <code>.env</code> file.
+          </p>
         </div>
       </div>
 
       <!-- Training Goal Form Card -->
       <div class="glass-card form-card">
         <h2>2. Target & Coach Configuration</h2>
-        <p class="card-desc">Define your target race and choose your AI coach style.</p>
+        <p class="card-desc">
+          Define your target race and choose your AI coach style.
+        </p>
 
         <form @submit.prevent="saveAndGeneratePlan" class="wizard-form">
           <!-- Race Distance selector -->
           <div class="form-group">
             <label class="form-label">Target Distance</label>
             <div class="distance-options">
-              <label 
-                v-for="dist in ['5K', '10K', 'Half Marathon', 'Marathon']" 
+              <label
+                v-for="dist in ['5K', '10K', 'Half Marathon', 'Marathon']"
                 :key="dist"
-                :class="['distance-card', { active: config.raceDistance === dist }]"
+                :class="[
+                  'distance-card',
+                  { active: config.raceDistance === dist },
+                ]"
               >
-                <input 
-                  type="radio" 
-                  name="distance" 
-                  :value="dist" 
+                <input
+                  type="radio"
+                  name="distance"
+                  :value="dist"
                   v-model="config.raceDistance"
                   class="sr-only"
                 />
-                <span class="dist-icon">{{ dist === '5K' ? '🏃' : dist === '10K' ? '⚡' : dist === 'Half Marathon' ? '🔥' : '🏆' }}</span>
+                <span class="dist-icon">{{
+                  dist === '5K'
+                    ? '🏃'
+                    : dist === '10K'
+                      ? '⚡'
+                      : dist === 'Half Marathon'
+                        ? '🔥'
+                        : '🏆'
+                }}</span>
                 <span class="dist-label">{{ dist }}</span>
               </label>
             </div>
@@ -161,45 +204,73 @@ const minDate = computed(() => {
           <!-- Target Date -->
           <div class="form-group">
             <label for="raceDate" class="form-label">Race Date</label>
-            <input 
-              type="date" 
-              id="raceDate" 
-              v-model="config.raceDate" 
+            <input
+              type="date"
+              id="raceDate"
+              v-model="config.raceDate"
               :min="minDate"
-              class="form-input" 
+              class="form-input"
               required
             />
           </div>
 
           <!-- Athlete Fitness level -->
           <div class="form-group">
-            <label for="currentLevel" class="form-label">Current Fitness Level</label>
-            <select id="currentLevel" v-model="config.currentLevel" class="form-select">
-              <option value="beginner">Beginner (Started running recently, 1-2 runs/week)</option>
-              <option value="intermediate">Intermediate (Can run 5K easily, 3-4 runs/week)</option>
-              <option value="advanced">Advanced (Experienced runner, 5+ runs/week)</option>
+            <label for="currentLevel" class="form-label"
+              >Current Fitness Level</label
+            >
+            <select
+              id="currentLevel"
+              v-model="config.currentLevel"
+              class="form-select"
+            >
+              <option value="beginner">
+                Beginner (Started running recently, 1-2 runs/week)
+              </option>
+              <option value="intermediate">
+                Intermediate (Can run 5K easily, 3-4 runs/week)
+              </option>
+              <option value="advanced">
+                Advanced (Experienced runner, 5+ runs/week)
+              </option>
             </select>
           </div>
 
           <!-- Coach Personality -->
           <div class="form-group">
-            <label for="coachPersonality" class="form-label">Coach Personality Style</label>
-            <select id="coachPersonality" v-model="config.coachPersonality" class="form-select">
-              <option value="encouraging">Encouraging (Positive, motivating, supportive)</option>
-              <option value="strict">Strict (Tough love, focus on target metrics, no excuses)</option>
-              <option value="data-driven">Data-driven (Focuses on average pace, zones, numbers)</option>
+            <label for="coachPersonality" class="form-label"
+              >Coach Personality Style</label
+            >
+            <select
+              id="coachPersonality"
+              v-model="config.coachPersonality"
+              class="form-select"
+            >
+              <option value="encouraging">
+                Encouraging (Positive, motivating, supportive)
+              </option>
+              <option value="strict">
+                Strict (Tough love, focus on target metrics, no excuses)
+              </option>
+              <option value="data-driven">
+                Data-driven (Focuses on average pace, zones, numbers)
+              </option>
             </select>
           </div>
 
           <!-- AI Status Warning -->
           <div v-if="!config.hasGeminiKey" class="info-note warning-note">
             <span class="note-icon">⚠️</span>
-            <p><strong>GEMINI_API_KEY</strong> is not configured in <code>.env</code>. The app will generate a highly optimized static program template for your race instead.</p>
+            <p>
+              <strong>GEMINI_API_KEY</strong> is not configured in
+              <code>.env</code>. The app will generate a highly optimized static
+              program template for your race instead.
+            </p>
           </div>
 
-          <button 
-            type="submit" 
-            class="btn-primary submit-btn" 
+          <button
+            type="submit"
+            class="btn-primary submit-btn"
             :disabled="isSubmitting"
           >
             <span v-if="isSubmitting">Generating Plan...</span>
