@@ -84,9 +84,9 @@ export function saveAthleteConfig(config: Partial<AthleteConfig>): void {
   const current = getAthleteConfig();
   
   if (current) {
-    const keys = Object.keys(config);
+    const keys = Object.keys(config) as Array<keyof AthleteConfig>;
     const setClause = keys.map(k => `${k} = ?`).join(', ');
-    const values = keys.map(k => (config as any)[k]);
+    const values = keys.map(k => config[k] ?? null);
     db.prepare(`UPDATE athlete_config SET ${setClause} WHERE id = 1`).run(...values);
   } else {
     const keys = ['id', ...Object.keys(config)];
@@ -163,9 +163,9 @@ export function saveWorkoutsPlan(workouts: Workout[]): void {
 // Helper: Update Workout
 export function updateWorkout(id: string, updates: Partial<Workout>): void {
   const db = getDb();
-  const keys = Object.keys(updates);
+  const keys = Object.keys(updates) as Array<keyof Workout>;
   const setClause = keys.map(k => `${k} = ?`).join(', ');
-  const values = keys.map(k => (updates as any)[k]);
+  const values = keys.map(k => updates[k] ?? null);
   db.prepare(`UPDATE workouts SET ${setClause} WHERE id = ?`).run(...values, id);
 }
 

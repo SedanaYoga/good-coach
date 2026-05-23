@@ -1,5 +1,7 @@
 import { getAthleteConfig, saveAthleteConfig, saveActivity } from './db'
 import { matchAndAnalyzeActivities } from './coach'
+import type { StravaTokenResponse } from '../../types/domain/athlete'
+import type { StravaActivity } from '../../types/domain/activity'
 
 export async function getValidAccessToken(): Promise<string> {
   const config = useRuntimeConfig()
@@ -25,7 +27,7 @@ export async function getValidAccessToken(): Promise<string> {
   // Token is expired or about to expire, refresh it
   console.log('Strava access token expired, refreshing...')
   try {
-    const refreshResponse: any = await $fetch(
+    const refreshResponse = await $fetch<StravaTokenResponse>(
       'https://www.strava.com/oauth/token',
       {
         method: 'POST',
@@ -49,8 +51,9 @@ export async function getValidAccessToken(): Promise<string> {
     })
 
     return newAccessToken
-  } catch (err: any) {
-    console.error('Failed to refresh Strava token:', err)
+  } catch (err) {
+    const error = err as Error
+    console.error('Failed to refresh Strava token:', error)
     throw new Error('Failed to refresh Strava access token')
   }
 }
@@ -59,7 +62,7 @@ export async function syncStravaActivities(): Promise<number> {
   const token = await getValidAccessToken()
 
   // Fetch last 30 activities from Strava
-  const activitiesResponse: any[] = await $fetch(
+  const activitiesResponse = await $fetch<StravaActivity[]>(
     'https://www.strava.com/api/v3/athlete/activities',
     {
       headers: {

@@ -1,63 +1,67 @@
-import { getValidAccessToken } from '../../utils/strava';
-import { saveActivity } from '../../utils/db';
-import { matchAndAnalyzeActivities } from '../../utils/coach';
+import { getValidAccessToken } from '../../utils/strava'
+import { saveActivity } from '../../utils/db'
+import { matchAndAnalyzeActivities } from '../../utils/coach'
+import type { StravaActivity } from '../../../types/domain/activity'
 
 interface WebhookQuery {
-  'hub.mode'?: string;
-  'hub.verify_token'?: string;
-  'hub.challenge'?: string;
+  'hub.mode'?: string
+  'hub.verify_token'?: string
+  'hub.challenge'?: string
 }
 
 interface WebhookBody {
-  object_type?: string;
-  aspect_type?: string;
-  object_id?: number;
-  owner_id?: number;
-  subscription_id?: number;
-  updates?: any;
+  object_type?: string
+  aspect_type?: string
+  object_id?: number
+  owner_id?: number
+  subscription_id?: number
+  updates?: Record<string, string | number | boolean | null>
 }
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig()
 
   // GET: Subscription validation challenge
   if (event.method === 'GET') {
-    const query = getQuery<WebhookQuery>(event);
-    const mode = query['hub.mode'];
-    const token = query['hub.verify_token'];
-    const challenge = query['hub.challenge'];
+    const query = getQuery<WebhookQuery>(event)
+    const mode = query['hub.mode']
+    const token = query['hub.verify_token']
+    const challenge = query['hub.challenge']
 
     if (mode === 'subscribe' && token === config.stravaVerifyToken) {
-      console.log('Strava Webhook challenge verified successfully.');
-      return { 'hub.challenge': challenge };
+      console.log('Strava Webhook challenge verified successfully.')
+      return { 'hub.challenge': challenge }
     }
-    
+
     throw createError({
       statusCode: 403,
-      statusMessage: 'Invalid verification token'
-    });
+      statusMessage: 'Invalid verification token',
+    })
   }
 
   // POST: Webhook event callback
   if (event.method === 'POST') {
-    const body = await readBody<WebhookBody>(event);
-    console.log('Received Strava webhook event:', body);
+    const body = await readBody<WebhookBody>(event)
+    console.log('Received Strava webhook event:', body)
 
     // Process activity creation in the background
     if (body.object_type === 'activity' && body.aspect_type === 'create') {
-      const activityId = body.object_id;
+      const activityId = body.object_id
 
       // Run asynchronously to allow returning 200 OK within 2 seconds
-      (async () => {
+      ;(async () => {
         try {
-          const token = await getValidAccessToken();
-          
+          const token = await getValidAccessToken()
+
           // Fetch full activity details from Strava API
-          const act: any = await $fetch(`https://www.strava.com/api/v3/activities/${activityId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
+          const act = await $fetch<StravaActivity>(
+            `https://www.strava.com/api/v3/activities/${activityId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          )
 
           // Save to SQLite
           saveActivity({
@@ -70,18 +74,21 @@ export default defineEventHandler(async (event) => {
             elapsed_time: act.elapsed_time,
             average_speed: act.average_speed,
             average_heartrate: act.average_heartrate,
-            max_heartrate: act.max_heartrate
-          });
+            max_heartrate: act.max_heartrate,
+          })
 
           // Run coaching analysis and match against workout plan
-          await matchAndAnalyzeActivities();
-          console.log(`Webhook: Successfully processed activity ${activityId}`);
+          await matchAndAnalyzeActivities()
+          console.log(`Webhook: Successfully processed activity ${activityId}`)
         } catch (err) {
-          console.error(`Webhook: Failed to process activity ${activityId}:`, err);
+          console.error(
+            `Webhook: Failed to process activity ${activityId}:`,
+            err,
+          )
         }
-      })();
+      })()
     }
 
-    return { status: 'EVENT_RECEIVED' };
+    return { status: 'EVENT_RECEIVED' }
   }
-});
+})

@@ -46,11 +46,12 @@ async function triggerSync(silent = false) {
       const data = await $fetch<DashboardResponse>('/api/dashboard')
       dashboardData.value = data
     }
-  } catch (err: any) {
+  } catch (err) {
+    const fetchErr = err as { data?: { statusMessage?: string } }
     console.error('Sync failed:', err)
     if (!silent) {
       syncError.value =
-        err.data?.statusMessage || 'Sync failed. Check your API keys.'
+        fetchErr.data?.statusMessage || 'Sync failed. Check your API keys.'
     }
   } finally {
     if (!silent) {

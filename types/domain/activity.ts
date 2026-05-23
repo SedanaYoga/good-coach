@@ -27,3 +27,17 @@ export interface Activity {
   coach_feedback: string | null;
   synced_at: string;
 }
+
+export interface StravaActivity {
+  id: number;
+  name: string;
+  sport_type: string;
+  start_date: string;
+  distance: number;
+  moving_time: number;
+  elapsed_time: number;
+  average_speed: number;
+  average_heartrate?: number;
+  max_heartrate?: number;
+}
+

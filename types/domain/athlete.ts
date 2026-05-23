@@ -29,3 +29,13 @@ export interface SetupConfigResponse {
   hasGeminiKey: boolean;
 }
 
+export interface StravaTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  athlete?: {
+    id: number;
+  };
+}
+
+

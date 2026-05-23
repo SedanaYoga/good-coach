@@ -8,11 +8,12 @@ export default defineEventHandler(async (event): Promise<{ success: boolean; cou
       success: true,
       count
     };
-  } catch (err: any) {
-    console.error('Strava manual sync failed:', err);
+  } catch (err) {
+    const error = err as Error;
+    console.error('Strava manual sync failed:', error);
     throw createError({
       statusCode: 500,
-      statusMessage: err.message || 'Failed to sync activities with Strava'
+      statusMessage: error.message || 'Failed to sync activities with Strava'
     });
   }
 });

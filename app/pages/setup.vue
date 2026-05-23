@@ -82,10 +82,11 @@ async function saveAndGeneratePlan() {
         router.push('/')
       }, 2000)
     }
-  } catch (err: any) {
+  } catch (err) {
+    const fetchErr = err as { data?: { statusMessage?: string } }
     console.error('Plan generation failed:', err)
     errorMsg.value =
-      err.data?.statusMessage ||
+      fetchErr.data?.statusMessage ||
       'Failed to generate training plan. Please check your setup parameters.'
   } finally {
     isSubmitting.value = false

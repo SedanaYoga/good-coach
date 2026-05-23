@@ -1,4 +1,5 @@
 import { saveAthleteConfig } from '../../utils/db';
+import type { StravaTokenResponse } from '../../../types/domain/athlete';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // Case 1: Callback from Strava with authorization code
   if (query.code) {
     try {
-      const tokenResponse: any = await $fetch('https://www.strava.com/oauth/token', {
+      const tokenResponse = await $fetch<StravaTokenResponse>('https://www.strava.com/oauth/token', {
         method: 'POST',
         body: {
           client_id: clientId,
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
       });
 
       return sendRedirect(event, '/setup?auth=success');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error exchanging token:', err);
       return sendRedirect(event, `/setup?error=token_exchange_failed`);
     }
