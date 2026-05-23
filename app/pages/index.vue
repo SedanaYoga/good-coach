@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DashboardResponse } from 'types/domain/coach'
-import { formatDate } from '~~/utils/date'
+import { formatDate } from 'utils/date'
 
 const dashboardData = ref<DashboardResponse | null>(null)
 const isLoading = ref<boolean>(true)

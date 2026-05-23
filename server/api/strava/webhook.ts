@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
             id: act.id,
             name: act.name,
             sport_type: act.sport_type,
-            start_date: act.start_date_local,
+            start_date: formatDate(act.start_date_local, 'YYYY-MM-DD'),
             distance: act.distance,
             moving_time: act.moving_time,
             elapsed_time: act.elapsed_time,
