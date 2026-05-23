@@ -93,234 +93,134 @@ function getWeekTypeSummary(workouts: Workout[]): string {
     v-if="isLoading"
     class="flex flex-col items-center justify-center min-h-[50vh] gap-4 animate-fade-in"
   >
-    <div
-      class="w-10 h-10 border-4 border-white/5 border-t-primary rounded-full animate-spin"
-    ></div>
-    <p>Loading your training plan...</p>
+    <div class="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin"></div>
+    <p class="text-sm text-muted-foreground">Loading your training plan...</p>
   </div>
 
   <div v-else-if="planData" class="max-w-[800px] mx-auto animate-fade-in">
-    <div class="text-center mb-10">
-      <h1
-        class="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight bg-linear-to-br from-white to-text-muted bg-clip-text text-transparent"
-      >
+    <div class="text-center mb-8">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-1">
         Your Training Schedule
       </h1>
-      <p class="text-text-muted">
+      <p class="text-sm text-muted-foreground">
         Complete week-by-week roadmap for your {{ planData.raceDistance }} on
         {{ formatDate(planData.raceDate) }}.
       </p>
     </div>
 
     <!-- Accordion of Weeks -->
-    <div class="flex flex-col">
+    <div class="flex flex-col border border-border rounded-xl overflow-hidden">
       <div
-        v-for="week in planData.plan"
+        v-for="(week, weekIdx) in planData.plan"
         :key="week.weekNumber"
-        class="flex flex-col"
+        :class="['flex flex-col', { 'border-t border-border': weekIdx > 0 }]"
       >
-        <!-- Week Header -->
+        <!-- Week Header Trigger -->
         <button
           @click="toggleWeek(week.weekNumber)"
-          class="w-full text-left flex justify-between items-center cursor-pointer py-5 border-b border-white/10 hover:text-white transition-colors group"
+          class="w-full text-left flex justify-between items-center cursor-pointer px-5 py-4 hover:bg-muted/50 transition-colors group bg-transparent border-none text-foreground"
         >
-          <div class="flex flex-row items-center gap-4">
-            <span
-              class="font-display font-extrabold text-[0.75rem] tracking-wider bg-white/10 text-white px-2.5 py-0.5 rounded-[4px] group-hover:bg-primary group-hover:text-black transition-colors"
-              >WEEK {{ week.weekNumber }}</span
-            >
+          <div class="flex items-center gap-3">
+            <UiBadge variant="secondary" class="text-[0.65rem] uppercase tracking-wider font-bold">
+              Week {{ week.weekNumber }}
+            </UiBadge>
             <div>
-              <h3
-                class="text-base font-semibold text-text-main group-hover:text-white transition-colors"
-              >
-                Training Block {{ week.weekNumber }}
-              </h3>
-              <span class="text-xs text-text-muted">{{
-                getWeekTypeSummary(week.workouts)
-              }}</span>
+              <h3 class="text-sm font-medium">Training Block {{ week.weekNumber }}</h3>
+              <span class="text-xs text-muted-foreground">{{ getWeekTypeSummary(week.workouts) }}</span>
             </div>
           </div>
           <svg
             :class="[
-              'w-4 h-4 text-text-muted transition-transform duration-200 group-hover:text-text-main',
-              { 'rotate-180 text-white': expandedWeeks[week.weekNumber] },
+              'w-4 h-4 text-muted-foreground transition-transform duration-200',
+              { 'rotate-180': expandedWeeks[week.weekNumber] },
             ]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
         <!-- Week Workouts List -->
         <div
           v-if="expandedWeeks[week.weekNumber]"
-          class="pl-2 sm:pl-5 pt-6 pb-4 animate-fade-in"
+          class="px-5 pb-4 animate-fade-in flex flex-col gap-3"
         >
-          <div class="flex flex-col">
-            <div
-              v-for="(w, wIndex) in week.workouts"
-              :key="w.id"
-              class="flex relative gap-6 pb-6 last:pb-0"
-            >
-              <!-- Timeline indicator -->
-              <div class="flex flex-col items-center w-4">
-                <div
-                  :class="[
-                    'w-3 h-3 rounded-full border-2 border-dark z-10 mt-6',
-                    {
-                      'bg-success': w.workout_type === 'easy_run',
-                      'bg-primary': w.workout_type === 'long_run',
-                      'bg-secondary': w.workout_type === 'interval',
-                      'bg-warning': w.workout_type === 'strength',
-                      'bg-text-muted': w.workout_type === 'rest',
-                    },
-                  ]"
-                ></div>
-                <div
-                  v-if="wIndex < week.workouts.length - 1"
-                  class="flex-1 w-[2px] bg-white/5"
-                ></div>
+          <UiCard
+            v-for="w in week.workouts"
+            :key="w.id"
+          >
+            <UiCardHeader class="pb-3">
+              <div class="flex flex-col sm:flex-row justify-between items-start gap-2">
+                <div>
+                  <span class="text-xs text-muted-foreground uppercase tracking-wider block mb-1">
+                    Day {{ w.day_number }} · {{ formatDate(w.calculated_date) }}
+                  </span>
+                  <UiCardTitle class="text-base">{{ w.title }}</UiCardTitle>
+                </div>
+                <UiBadge
+                  :variant="w.status === 'completed' ? 'success' : w.status === 'skipped' ? 'destructive' : 'outline'"
+                  class="text-[0.65rem] uppercase shrink-0"
+                >
+                  {{ w.status === 'completed' ? '✓ Completed' : w.status === 'skipped' ? '✗ Skipped' : 'Pending' }}
+                </UiBadge>
+              </div>
+            </UiCardHeader>
+            <UiCardContent>
+              <p class="text-sm text-muted-foreground leading-relaxed mb-4">
+                {{ w.description }}
+              </p>
+
+              <!-- Targets -->
+              <div
+                v-if="w.distance_target || w.duration_target"
+                class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded-md border border-border"
+              >
+                <span class="font-medium text-foreground">Target:</span>
+                <span v-if="w.distance_target">📏 {{ formatDistance(w.distance_target) }}</span>
+                <span v-if="w.duration_target">⏱️ {{ formatDuration(w.duration_target) }}</span>
+                <span class="capitalize">⚙️ {{ w.workout_type.replace('_', ' ') }}</span>
               </div>
 
-              <!-- Workout Content Card -->
-              <div class="glass-card flex-1">
-                <div
-                  class="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-4 mb-3"
-                >
-                  <div>
-                    <span
-                      class="text-[0.8rem] text-text-muted uppercase tracking-wider block mb-0.5"
-                      >Day {{ w.day_number }} •
-                      {{ formatDate(w.calculated_date) }}</span
-                    >
-                    <h4 class="text-base font-semibold tracking-tight">
-                      {{ w.title }}
-                    </h4>
+              <!-- Completed Activity Link -->
+              <div v-if="w.status === 'completed' && w.activity" class="mt-4 border-t border-border pt-4">
+                <div class="text-xs font-medium mb-3 text-success">
+                  💪 Sync Session: "{{ w.activity.name }}"
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-success/5 border border-success/10 p-3 rounded-lg mb-3">
+                  <div class="flex flex-col">
+                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Distance</span>
+                    <span class="font-semibold text-sm">{{ formatDistance(w.activity.distance) }}</span>
                   </div>
-                  <div>
-                    <span
-                      :class="[
-                        'text-[0.7rem] font-bold uppercase px-2 py-1 rounded-[4px]',
-                        w.status === 'completed'
-                          ? 'bg-success/15 text-success border border-success/20'
-                          : w.status === 'skipped'
-                            ? 'bg-error/15 text-error border border-error/20'
-                            : 'bg-white/5 text-text-muted',
-                      ]"
-                    >
-                      {{
-                        w.status === 'completed'
-                          ? '✓ Completed'
-                          : w.status === 'skipped'
-                            ? '✗ Skipped'
-                            : 'Pending'
-                      }}
-                    </span>
+                  <div class="flex flex-col">
+                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Duration</span>
+                    <span class="font-semibold text-sm">{{ formatDuration(w.activity.moving_time) }}</span>
+                  </div>
+                  <div class="flex flex-col" v-if="w.activity.sport_type === 'Run'">
+                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Avg Pace</span>
+                    <span class="font-semibold text-sm">{{ formatPace(w.activity.average_speed) }}</span>
+                  </div>
+                  <div class="flex flex-col" v-if="w.activity.average_heartrate">
+                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Heartrate</span>
+                    <span class="font-semibold text-sm">{{ Math.round(w.activity.average_heartrate) }} bpm</span>
                   </div>
                 </div>
 
-                <p class="text-text-muted text-[0.95rem] leading-relaxed mb-4">
-                  {{ w.description }}
-                </p>
-
-                <!-- Targets -->
+                <!-- Coach Feedback -->
                 <div
-                  class="flex flex-wrap gap-4 text-[0.8rem] text-text-muted bg-white/1.5 px-3 py-2 rounded-sm border border-dashed border-white/5"
-                  v-if="w.distance_target || w.duration_target"
+                  v-if="w.coach_feedback"
+                  class="bg-muted/50 border border-border p-3 rounded-lg"
                 >
-                  <span class="font-semibold text-text-main">Target:</span>
-                  <span v-if="w.distance_target"
-                    >📏 {{ formatDistance(w.distance_target) }}</span
-                  >
-                  <span v-if="w.duration_target"
-                    >⏱️ {{ formatDuration(w.duration_target) }}</span
-                  >
-                  <span class="capitalize"
-                    >⚙️ {{ w.workout_type.replace('_', ' ') }}</span
-                  >
-                </div>
-
-                <!-- Completed Activity Link -->
-                <div
-                  v-if="w.status === 'completed' && w.activity"
-                  class="mt-4 border-t border-white/5 pt-4"
-                >
-                  <div class="text-[0.85rem] font-semibold mb-3 text-success">
-                    💪 Sync Session: "{{ w.activity.name }}"
-                  </div>
-
-                  <div
-                    class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-success/3 border border-success/10 p-3 rounded-md mb-3"
-                  >
-                    <div class="flex flex-col">
-                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
-                        >Distance</span
-                      >
-                      <span class="font-display font-bold text-[1rem]">{{
-                        formatDistance(w.activity.distance)
-                      }}</span>
-                    </div>
-                    <div class="flex flex-col">
-                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
-                        >Duration</span
-                      >
-                      <span class="font-display font-bold text-[1rem]">{{
-                        formatDuration(w.activity.moving_time)
-                      }}</span>
-                    </div>
-                    <div
-                      class="flex flex-col"
-                      v-if="w.activity.sport_type === 'Run'"
-                    >
-                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
-                        >Avg Pace</span
-                      >
-                      <span class="font-display font-bold text-[1rem]">{{
-                        formatPace(w.activity.average_speed)
-                      }}</span>
-                    </div>
-                    <div
-                      class="flex flex-col"
-                      v-if="w.activity.average_heartrate"
-                    >
-                      <span class="text-[0.7rem] text-text-muted block mb-0.5"
-                        >Heartrate</span
-                      >
-                      <span class="font-display font-bold text-[1rem]"
-                        >{{
-                          Math.round(w.activity.average_heartrate)
-                        }}
-                        bpm</span
-                      >
-                    </div>
-                  </div>
-
-                  <!-- Coach Feedback -->
-                  <div
-                    v-if="w.coach_feedback"
-                    class="bg-primary/4 border border-primary/10 p-3 rounded-md"
-                  >
-                    <span
-                      class="text-[0.75rem] font-bold text-primary block mb-1"
-                      >🧠 Coach Feedback:</span
-                    >
-                    <p
-                      class="text-[0.85rem] leading-relaxed italic text-slate-200"
-                    >
-                      "{{ w.coach_feedback }}"
-                    </p>
-                  </div>
+                  <span class="text-xs font-medium text-primary block mb-1">🧠 Coach Feedback:</span>
+                  <p class="text-xs leading-relaxed text-muted-foreground italic">
+                    "{{ w.coach_feedback }}"
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
+            </UiCardContent>
+          </UiCard>
         </div>
       </div>
     </div>

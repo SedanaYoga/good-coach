@@ -34,7 +34,6 @@ onMounted(() => {
   // Handle query parameter messages
   if (route.query.auth === 'success') {
     successMsg.value = 'Successfully connected to Strava!'
-    // Clean up url parameters
     router.replace({ query: {} })
   } else if (route.query.error === 'missing_keys') {
     errorMsg.value =
@@ -96,173 +95,143 @@ const minDate = computed(() => {
   tomorrow.setDate(tomorrow.getDate() + 1)
   return tomorrow.toISOString().split('T')[0] || ''
 })
+
+const distances = [
+  { value: '5K', icon: '🏃', label: '5K' },
+  { value: '10K', icon: '⚡', label: '10K' },
+  { value: 'Half Marathon', icon: '🔥', label: 'Half Marathon' },
+  { value: 'Marathon', icon: '🏆', label: 'Marathon' },
+]
 </script>
 
 <template>
-  <div class="max-w-[1000px] mx-auto animate-fade-in">
-    <div class="text-center mb-10">
-      <h1
-        class="text-4xl md:text-5xl font-extrabold mb-3 bg-linear-to-br from-white to-text-muted bg-clip-text text-transparent"
-      >
+  <div class="max-w-[900px] mx-auto animate-fade-in">
+    <div class="text-center mb-8">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-2">
         Race Preparation Wizard
       </h1>
-      <p class="text-text-muted text-lg">
+      <p class="text-sm text-muted-foreground">
         Set your target, connect your Strava account, and let the AI Coach build
         your custom plan.
       </p>
     </div>
 
     <!-- Alerts -->
-    <div
-      v-if="errorMsg"
-      class="bg-error/8 border border-error/20 text-rose-300 px-5 py-4 rounded-md flex items-start gap-3 mb-8 text-[0.95rem] leading-relaxed"
-    >
-      <span class="text-lg">⚠️</span>
-      <p>{{ errorMsg }}</p>
-    </div>
-    <div
-      v-if="successMsg"
-      class="bg-success/8 border border-success/20 text-emerald-200 px-5 py-4 rounded-md flex items-start gap-3 mb-8 text-[0.95rem] leading-relaxed"
-    >
-      <span class="text-lg">✅</span>
-      <p>{{ successMsg }}</p>
-    </div>
+    <UiAlert v-if="errorMsg" variant="destructive" class="mb-6">
+      <UiAlertDescription class="flex items-start gap-2">
+        <span>⚠️</span>
+        <p>{{ errorMsg }}</p>
+      </UiAlertDescription>
+    </UiAlert>
+    <UiAlert v-if="successMsg" variant="success" class="mb-6">
+      <UiAlertDescription class="flex items-start gap-2">
+        <span>✅</span>
+        <p>{{ successMsg }}</p>
+      </UiAlertDescription>
+    </UiAlert>
 
-    <div class="grid grid-cols-1 md:grid-cols-[1fr_1.3fr] gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_1.3fr] gap-6">
       <!-- Connection Status Card -->
-      <div class="glass-card flex flex-col">
-        <h2 class="text-lg font-semibold tracking-tight mb-2">1. Strava Integration</h2>
-        <p class="text-text-muted text-[0.95rem] mb-6 leading-relaxed">
-          We fetch your running and strength sessions from Strava to track your
-          targets automatically.
-        </p>
-
-        <div
-          v-if="config.connected"
-          class="bg-success/8 border border-success/20 rounded-md p-4 flex flex-col gap-1.5 mb-6"
-        >
-          <div class="flex items-center gap-2 text-success">
-            <span
-              class="w-2.5 h-2.5 rounded-full bg-success shadow-[0_0_8px_var(--color-success)]"
-            ></span>
-            <strong>Connected to Strava</strong>
+      <UiCard class="flex flex-col">
+        <UiCardHeader>
+          <UiCardTitle>1. Strava Integration</UiCardTitle>
+          <UiCardDescription>
+            We fetch your running and strength sessions from Strava to track your
+            targets automatically.
+          </UiCardDescription>
+        </UiCardHeader>
+        <UiCardContent class="flex-1 flex flex-col gap-4">
+          <div
+            v-if="config.connected"
+            class="bg-success/5 border border-success/20 rounded-lg p-4 flex flex-col gap-1.5"
+          >
+            <div class="flex items-center gap-2 text-success text-sm font-medium">
+              <span class="w-2 h-2 rounded-full bg-success"></span>
+              Connected to Strava
+            </div>
+            <span class="text-xs text-muted-foreground">Athlete ID: {{ config.athleteId }}</span>
           </div>
-          <span class="text-xs text-text-muted"
-            >Athlete ID: {{ config.athleteId }}</span
-          >
-        </div>
 
-        <div
-          v-else
-          class="bg-error/4 border border-error/15 rounded-md p-6 text-center mb-6"
-        >
-          <p class="text-error font-medium mb-4">
-            No active Strava connection detected.
-          </p>
-          <a
-            href="/api/strava/auth"
-            class="btn-primary w-full justify-center no-underline"
+          <div
+            v-else
+            class="border border-border rounded-lg p-6 text-center"
           >
-            Connect Strava Account ⚡
-          </a>
-        </div>
+            <p class="text-sm text-muted-foreground mb-4">
+              No active Strava connection detected.
+            </p>
+            <UiButton as="a" href="/api/strava/auth" class="w-full no-underline">
+              Connect Strava Account ⚡
+            </UiButton>
+          </div>
 
-        <div
-          class="bg-white/2 border-l-3 border-text-muted p-3.5 rounded-r-sm flex gap-3 text-[0.85rem] leading-relaxed text-text-muted"
-        >
-          <span class="text-base">💡</span>
-          <p>
-            Make sure you have registered your app at
-            <a
-              href="https://www.strava.com/settings/api"
-              target="_blank"
-              class="text-primary no-underline font-medium hover:underline"
-              >Strava Developers</a
-            >
-            and configured client credentials in your local
-            <code>.env</code> file.
-          </p>
-        </div>
-      </div>
+          <div class="bg-muted/50 border-l-2 border-muted-foreground/30 p-3 rounded-r-md text-xs text-muted-foreground leading-relaxed">
+            <p>
+              💡 Make sure you have registered your app at
+              <a
+                href="https://www.strava.com/settings/api"
+                target="_blank"
+                class="text-primary no-underline font-medium hover:underline"
+              >Strava Developers</a>
+              and configured client credentials in your local
+              <code class="bg-muted px-1 py-0.5 rounded text-xs">`.env`</code> file.
+            </p>
+          </div>
+        </UiCardContent>
+      </UiCard>
 
       <!-- Training Goal Form Card -->
-      <div class="glass-card">
-        <h2 class="text-lg font-semibold tracking-tight mb-2">2. Target & Coach Configuration</h2>
-        <p class="text-text-muted text-[0.95rem] mb-6 leading-relaxed">
-          Define your target race and choose your AI coach style.
-        </p>
-
-        <form @submit.prevent="saveAndGeneratePlan" class="flex flex-col gap-6">
-          <!-- Race Distance selector -->
-          <div class="flex flex-col gap-2">
-            <label class="font-display font-semibold text-sm text-text-muted"
-              >Target Distance</label
-            >
-            <div class="grid grid-cols-2 gap-3">
-              <label
-                v-for="dist in ['5K', '10K', 'Half Marathon', 'Marathon']"
-                :key="dist"
-                :class="[
-                  'bg-white/2 border border-white/5 rounded-md p-4 flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/5 hover:border-white/15',
-                  {
-                    'bg-primary/6 border-primary shadow-[0_0_15px_rgba(181,255,43,0.08)]':
-                      config.raceDistance === dist,
-                  },
-                ]"
-              >
-                <input
-                  type="radio"
-                  name="distance"
-                  :value="dist"
-                  v-model="config.raceDistance"
-                  class="sr-only"
-                />
-                <span class="text-2xl">{{
-                  dist === '5K'
-                    ? '🏃'
-                    : dist === '10K'
-                      ? '⚡'
-                      : dist === 'Half Marathon'
-                        ? '🔥'
-                        : '🏆'
-                }}</span>
-                <span class="font-display font-semibold text-sm">{{
-                  dist
-                }}</span>
-              </label>
+      <UiCard>
+        <UiCardHeader>
+          <UiCardTitle>2. Target & Coach Configuration</UiCardTitle>
+          <UiCardDescription>
+            Define your target race and choose your AI coach style.
+          </UiCardDescription>
+        </UiCardHeader>
+        <UiCardContent>
+          <form @submit.prevent="saveAndGeneratePlan" class="flex flex-col gap-5">
+            <!-- Race Distance selector -->
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium text-muted-foreground">Target Distance</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label
+                  v-for="dist in distances"
+                  :key="dist.value"
+                  :class="[
+                    'border rounded-lg p-3 flex flex-col items-center gap-1.5 cursor-pointer transition-colors hover:bg-muted/50',
+                    config.raceDistance === dist.value
+                      ? 'border-primary bg-primary/5 text-foreground'
+                      : 'border-border text-muted-foreground',
+                  ]"
+                >
+                  <input
+                    type="radio"
+                    name="distance"
+                    :value="dist.value"
+                    v-model="config.raceDistance"
+                    class="sr-only"
+                  />
+                  <span class="text-xl">{{ dist.icon }}</span>
+                  <span class="font-medium text-sm">{{ dist.label }}</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <!-- Target Date -->
-          <div class="flex flex-col gap-2">
-            <label
-              for="raceDate"
-              class="font-display font-semibold text-sm text-text-muted"
-              >Race Date</label
-            >
-            <input
-              type="date"
-              id="raceDate"
-              v-model="config.raceDate"
-              :min="minDate"
-              class="form-input"
-              required
-            />
-          </div>
+            <!-- Target Date -->
+            <div class="flex flex-col gap-2">
+              <label for="raceDate" class="text-sm font-medium text-muted-foreground">Race Date</label>
+              <UiInput
+                type="date"
+                id="raceDate"
+                v-model="config.raceDate"
+                :min="minDate"
+                required
+              />
+            </div>
 
-          <!-- Athlete Fitness level -->
-          <div class="flex flex-col gap-2">
-            <label
-              for="currentLevel"
-              class="font-display font-semibold text-sm text-text-muted"
-              >Current Fitness Level</label
-            >
-            <div class="relative w-full">
-              <select
-                id="currentLevel"
-                v-model="config.currentLevel"
-                class="form-select appearance-none pr-10"
-              >
+            <!-- Athlete Fitness level -->
+            <div class="flex flex-col gap-2">
+              <label for="currentLevel" class="text-sm font-medium text-muted-foreground">Current Fitness Level</label>
+              <UiSelect id="currentLevel" v-model="config.currentLevel">
                 <option value="beginner">
                   Beginner (Started running recently, 1-2 runs/week)
                 </option>
@@ -272,28 +241,13 @@ const minDate = computed(() => {
                 <option value="advanced">
                   Advanced (Experienced runner, 5+ runs/week)
                 </option>
-              </select>
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-text-muted">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              </UiSelect>
             </div>
-          </div>
 
-          <!-- Coach Personality -->
-          <div class="flex flex-col gap-2">
-            <label
-              for="coachPersonality"
-              class="font-display font-semibold text-sm text-text-muted"
-              >Coach Personality Style</label
-            >
-            <div class="relative w-full">
-              <select
-                id="coachPersonality"
-                v-model="config.coachPersonality"
-                class="form-select appearance-none pr-10"
-              >
+            <!-- Coach Personality -->
+            <div class="flex flex-col gap-2">
+              <label for="coachPersonality" class="text-sm font-medium text-muted-foreground">Coach Personality Style</label>
+              <UiSelect id="coachPersonality" v-model="config.coachPersonality">
                 <option value="encouraging">
                   Encouraging (Positive, motivating, supportive)
                 </option>
@@ -303,38 +257,25 @@ const minDate = computed(() => {
                 <option value="data-driven">
                   Data-driven (Focuses on average pace, zones, numbers)
                 </option>
-              </select>
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-text-muted">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              </UiSelect>
             </div>
-          </div>
 
-          <!-- AI Status Warning -->
-          <div
-            v-if="!config.hasGeminiKey"
-            class="bg-warning/4 border-l-3 border-warning p-3.5 rounded-r-sm flex gap-3 text-[0.85rem] leading-relaxed text-text-muted"
-          >
-            <span class="text-base">⚠️</span>
-            <p>
-              <strong>GEMINI_API_KEY</strong> is not configured in
-              <code>.env</code>. The app will generate a highly optimized static
-              program template for your race instead.
-            </p>
-          </div>
+            <!-- AI Status Warning -->
+            <UiAlert v-if="!config.hasGeminiKey" variant="warning">
+              <UiAlertDescription class="text-xs">
+                ⚠️ <strong>GEMINI_API_KEY</strong> is not configured in
+                <code class="bg-muted px-1 py-0.5 rounded text-xs">.env</code>. The app will generate a highly optimized static
+                program template for your race instead.
+              </UiAlertDescription>
+            </UiAlert>
 
-          <button
-            type="submit"
-            class="btn-primary mt-3 w-full justify-center"
-            :disabled="isSubmitting"
-          >
-            <span v-if="isSubmitting">Generating Plan...</span>
-            <span v-else>Generate Training Program 🚀</span>
-          </button>
-        </form>
-      </div>
+            <UiButton type="submit" :disabled="isSubmitting" class="w-full mt-1">
+              <span v-if="isSubmitting">Generating Plan...</span>
+              <span v-else>Generate Training Program 🚀</span>
+            </UiButton>
+          </form>
+        </UiCardContent>
+      </UiCard>
     </div>
   </div>
 </template>
