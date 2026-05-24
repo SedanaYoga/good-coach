@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { Sun, Moon } from '@lucide/vue'
+
+const colorMode = useColorMode()
+
+const isDark = computed({
+  get() {
+    return colorMode.value === 'dark'
+  },
+  set(val: boolean) {
+    colorMode.preference = val ? 'dark' : 'light'
+  },
+})
+</script>
+
 <template>
   <div class="flex flex-col min-h-screen">
     <!-- Header -->
@@ -17,26 +32,38 @@
             <span class="text-primary">AI</span>
           </span>
         </NuxtLink>
-        <nav class="flex items-center gap-6">
-          <NuxtLink
-            to="/"
-            class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            active-class="!text-foreground"
-            >Dashboard</NuxtLink
+        <div class="flex items-center gap-4">
+          <nav class="flex items-center gap-6">
+            <NuxtLink
+              to="/"
+              class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              active-class="!text-foreground"
+              >Dashboard</NuxtLink
+            >
+            <NuxtLink
+              to="/plan"
+              class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              active-class="!text-foreground"
+              >Training Plan</NuxtLink
+            >
+            <NuxtLink
+              to="/setup"
+              class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              active-class="!text-foreground"
+              >Settings</NuxtLink
+            >
+          </nav>
+
+          <UiButton
+            variant="ghost"
+            size="icon"
+            class="size-9 rounded-md transition-colors"
+            @click="isDark = !isDark"
+            aria-label="Toggle dark mode"
           >
-          <NuxtLink
-            to="/plan"
-            class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            active-class="!text-foreground"
-            >Training Plan</NuxtLink
-          >
-          <NuxtLink
-            to="/setup"
-            class="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            active-class="!text-foreground"
-            >Settings</NuxtLink
-          >
-        </nav>
+            <component :is="isDark ? Sun : Moon" class="size-4 text-foreground" />
+          </UiButton>
+        </div>
       </div>
     </header>
 

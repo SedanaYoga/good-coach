@@ -36,9 +36,14 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/global.css'],
-  modules: ['shadcn-nuxt', '@vueuse/nuxt'],
+  modules: ['shadcn-nuxt', '@vueuse/nuxt', '@nuxtjs/color-mode'],
   shadcn: {
     componentDir: '@/components/ui',
     prefix: 'Ui',
+  },
+  colorMode: {
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'dark',
   },
 })
