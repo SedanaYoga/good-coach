@@ -177,6 +177,125 @@ Provide the output strictly as a JSON array of objects with the following format
   }
 }
 
+export async function* generateTrainingBlockStream(
+  stravaData: any,
+  userAnswers: any,
+): AsyncGenerator<{ type: 'chunk'; text: string } | { type: 'done'; plan: Workout[] } | { type: 'error'; message: string }> {
+  const ai = getAI()
+  const raceDistance = userAnswers.raceDistance || '10K'
+  const raceDate = userAnswers.raceDate
+  const currentLevel = userAnswers.currentLevel || 'beginner'
+  const targetTime = userAnswers.targetTime || 'N/A'
+  const personality = userAnswers.coachPersonality || 'encouraging'
+  const answers = userAnswers.answers || {}
+
+  const weeksDiff = calculateWeeksUntilDate(raceDate)
+
+  if (!ai) {
+    console.log('Streaming: Using rule-based fallback generator.')
+    yield { type: 'chunk', text: 'Initializing fallback coaching engine...\n' }
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    yield { type: 'chunk', text: `Analyzing goals: distance=${raceDistance}, date=${raceDate}, weeks=${weeksDiff}\n` }
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    yield { type: 'chunk', text: 'Constructing 4-phase training program...\n' }
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    yield { type: 'chunk', text: '- Weaving in 2 strength training sessions per week\n' }
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    yield { type: 'chunk', text: '- Weaving in 4 mobility flows per week\n' }
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    yield { type: 'chunk', text: 'Finalizing blocks (Initial -> Progression -> Taper -> Recovery)...\n' }
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    
+    const plan = generateFallbackTrainingBlock(weeksDiff, raceDistance)
+    yield { type: 'done', plan }
+    return
+  }
+
+  const stravaContextStr = stravaData
+    ? `Average Weekly Mileage: ${stravaData.weeklyMileageKm} km, Average Pace: ${stravaData.averageSpeed} m/s, Average Weekly Training Load: ${stravaData.avgWeeklyLoad}, Total Runs: ${stravaData.totalRuns}`
+    : 'No historical Strava data connected.'
+
+  const answersStr = Object.entries(answers)
+    .map(([q, a]) => `- Question: ${q}\n  Answer: ${a}`)
+    .join('\n')
+
+  const prompt = `
+You are a professional running coach with a "${personality}" personality.
+Generate a structured, day-by-day training program for an athlete preparing for a ${raceDistance} race on ${raceDate} (approximately ${weeksDiff} weeks from now).
+The athlete is at a "${currentLevel}" fitness level and has a target goal time of "${targetTime}".
+
+Here is the athlete's historical training context from Strava (last 3 months):
+${stravaContextStr}
+
+Here are the athlete's onboarding responses:
+${answersStr}
+
+The training program must be divided strictly into 4 phases:
+1. 'initial' (Base building, low intensity, initial conditioning)
+2. 'progression' (Increasing mileage, speed intervals, training volume peak)
+3. 'taper' (Reducing mileage, maintaining intensity to peak for the race)
+4. 'recovery' (The race week itself, which includes the race on the final weekend, and post-race active recovery/rest)
+
+You must schedule:
+- Running sessions ('easy_run', 'long_run', 'interval' as needed for the target distance)
+- 2 to 4 strength sessions per week ('strength' workout type)
+- 2 to 6 mobility sessions per week ('mobility' workout type)
+- Rest days ('rest' workout type)
+
+Note: Multiple sessions can be scheduled on the same day (e.g., a run and a mobility session on the same day). Ensure each workout has a unique 'id' (e.g. 'w1d1_1', 'w1d1_2').
+
+Provide the output strictly as a JSON array of objects with the following format. Do not include markdown headers or surrounding text. Only return the valid JSON array:
+[
+  {
+    "id": "w1d1_1",
+    "week_number": 1,
+    "day_number": 1,
+    "workout_type": "easy_run",
+    "phase": "initial",
+    "title": "Easy Run",
+    "description": "Run 30 mins at conversational pace. Focus on high cadence.",
+    "distance_target": 4000,
+    "duration_target": 1800
+  },
+  {
+    "id": "w1d1_2",
+    "week_number": 1,
+    "day_number": 1,
+    "workout_type": "mobility",
+    "phase": "initial",
+    "title": "Post-Run Mobility Flow",
+    "description": "Hip flexor stretches, calf rolling, and hamstring dynamic stretching.",
+    "distance_target": null,
+    "duration_target": 600
+  }
+]
+`
+
+  try {
+    const model = ai.getGenerativeModel({ model: 'gemini-3.5-flash' })
+    const resultStream = await model.generateContentStream(prompt)
+    let fullText = ''
+
+    for await (const chunk of resultStream.stream) {
+      const chunkText = chunk.text()
+      fullText += chunkText
+      yield { type: 'chunk', text: chunkText }
+    }
+
+    const jsonStr = fullText
+      .replace(/^```json/, '')
+      .replace(/```$/, '')
+      .trim()
+    const plan = JSON.parse(jsonStr)
+    yield { type: 'done', plan }
+  } catch (err: any) {
+    console.error('Gemini training block stream generation failed, falling back:', err)
+    yield { type: 'chunk', text: `\nError encountered: ${err.message || err}. Falling back to rule-based training block...\n` }
+    const plan = generateFallbackTrainingBlock(weeksDiff, raceDistance)
+    yield { type: 'done', plan }
+  }
+}
+
 function generateFallbackTrainingBlock(weeksDiff: number, raceDistance: string): Workout[] {
   const plan: Workout[] = []
   

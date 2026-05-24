@@ -17,13 +17,84 @@ const isLoading = ref<boolean>(true)
 const isRegenerating = ref<boolean>(false)
 const expandedWeeks = ref<Record<number, boolean>>({})
 
+const isStreaming = ref(false)
+const streamStatus = ref('')
+const liveAIText = ref('')
+const streamError = ref<string | null>(null)
+
 const router = useRouter()
+
+async function startPlanStream() {
+  isStreaming.value = true
+  streamError.value = null
+  liveAIText.value = ''
+  streamStatus.value = 'Connecting to AI coach...'
+
+  try {
+    const response = await fetch('/api/plan/generate')
+    if (!response.body) {
+      throw new Error('Readable stream not supported by browser or API.')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let finished = false
+    let buffer = ''
+
+    while (!finished) {
+      const { value, done } = await reader.read()
+      if (done) {
+        finished = true
+        break
+      }
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (!line.trim()) continue
+        if (line.startsWith('data: ')) {
+          try {
+            const payload = JSON.parse(line.slice(6))
+            if (payload.type === 'status') {
+              streamStatus.value = payload.message
+            } else if (payload.type === 'chunk') {
+              liveAIText.value += payload.text
+            } else if (payload.type === 'done') {
+              streamStatus.value = 'Plan finalized!'
+              finished = true
+              
+              // Load the completed plan from database
+              const completedData = await $fetch<PlanResponse>('/api/plan')
+              planData.value = completedData
+              expandedWeeks.value = { 1: true }
+              isStreaming.value = false
+            } else if (payload.type === 'error') {
+              throw new Error(payload.message)
+            }
+          } catch (jsonErr) {
+            console.error('Failed to parse event line:', line, jsonErr)
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    console.error('Streaming plan generation failed:', err)
+    streamError.value = err.message || 'An error occurred during plan generation.'
+    isStreaming.value = false
+  }
+}
 
 async function fetchPlan() {
   try {
     const data = await $fetch<PlanResponse>('/api/plan')
     if (data.plan.length === 0) {
-      router.push('/setup')
+      if (!data.raceDate) {
+        router.push('/setup')
+      } else {
+        startPlanStream()
+      }
       return
     }
     planData.value = data
@@ -47,19 +118,7 @@ async function regeneratePlan() {
   ) {
     return
   }
-  isRegenerating.value = true
-  try {
-    const data = await $fetch<PlanResponse>('/api/plan?regenerate=true')
-    planData.value = data
-    // Expand week 1 by default
-    if (data.plan.length > 0) {
-      expandedWeeks.value = { 1: true }
-    }
-  } catch (err) {
-    console.error('Failed to regenerate plan:', err)
-  } finally {
-    isRegenerating.value = false
-  }
+  startPlanStream()
 }
 
 onMounted(() => {
@@ -225,19 +284,59 @@ const overallStats = computed(() => {
 
 <template>
   <div
-    v-if="isLoading || isRegenerating"
-    class="flex flex-col items-center justify-center min-h-[50vh] gap-4 animate-fade-in"
+    v-if="isLoading || isStreaming"
+    class="flex flex-col items-center justify-center min-h-[60vh] gap-6 max-w-[700px] mx-auto w-full animate-fade-in"
   >
-    <div
-      class="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin"
-    ></div>
-    <p class="text-sm text-muted-foreground">
-      {{
-        isRegenerating
-          ? 'Coach is rebuilding your 4-phase block...'
-          : 'Loading your training plan...'
-      }}
-    </p>
+    <div v-if="isLoading && !isStreaming" class="flex flex-col items-center gap-4">
+      <div class="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin"></div>
+      <p class="text-sm text-muted-foreground">Loading your training plan...</p>
+    </div>
+
+    <!-- Live AI Streaming Console -->
+    <div v-else-if="isStreaming" class="w-full flex flex-col gap-4">
+      <UiAlert v-if="streamError" variant="destructive" class="mb-4">
+        <UiAlertDescription class="flex items-start gap-2">
+          <span>⚠️</span>
+          <p>{{ streamError }}</p>
+        </UiAlertDescription>
+      </UiAlert>
+
+      <UiCard class="border border-primary/30 shadow-md shadow-primary/5 overflow-hidden w-full bg-card">
+        <UiCardHeader class="pb-3 border-b border-border bg-muted/40">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></div>
+              <UiCardTitle class="text-sm font-semibold">AI Coach Designing Plan</UiCardTitle>
+            </div>
+            <span class="text-[0.7rem] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+              Gemini Live Stream
+            </span>
+          </div>
+        </UiCardHeader>
+        <UiCardContent class="py-5 flex flex-col gap-4">
+          <!-- Coach Status Message -->
+          <div class="flex items-center gap-2.5 text-xs text-foreground font-medium bg-primary/5 border border-primary/10 px-3 py-2 rounded-lg">
+            <div class="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin shrink-0"></div>
+            <span>{{ streamStatus }}</span>
+          </div>
+
+          <!-- Live Output Terminal -->
+          <div class="bg-zinc-950 dark:bg-zinc-950/40 border border-border text-zinc-300 font-mono text-[0.75rem] p-4 rounded-xl h-[280px] overflow-y-auto leading-relaxed whitespace-pre-wrap scroll-smooth">
+            {{ liveAIText || 'Awaiting connection to coach...' }}
+          </div>
+          
+          <div class="text-[0.65rem] text-muted-foreground italic text-center">
+            The live terminal displays raw training program data as it is compiled by the AI coach.
+          </div>
+        </UiCardContent>
+      </UiCard>
+
+      <div v-if="streamError" class="flex justify-center">
+        <UiButton variant="outline" size="sm" @click="router.push('/setup')">
+          Return to Configuration ⚙️
+        </UiButton>
+      </div>
+    </div>
   </div>
 
   <div v-else-if="planData" class="max-w-[900px] mx-auto animate-fade-in">
