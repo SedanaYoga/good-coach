@@ -69,18 +69,6 @@ export default defineEventHandler(async (event) => {
     db.prepare('DELETE FROM workouts').run();
     db.prepare('UPDATE activities SET matched_workout_id = NULL, coach_feedback = NULL').run();
 
-    // Try to sync historical activities if connected to Strava
-    const athlete = getAthleteConfig();
-    const isConnected = !!(athlete?.strava_refresh_token);
-    if (isConnected) {
-      try {
-        console.log('Setup: Connected to Strava, fetching historical activities...');
-        await fetchHistoricalStravaActivities();
-      } catch (e) {
-        console.warn('Setup: Post-generation Strava activity sync failed:', e);
-      }
-    }
-
     return {
       success: true,
       message: 'Athlete profile and goals saved successfully.'

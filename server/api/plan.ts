@@ -11,7 +11,12 @@ export default defineEventHandler(async (event) => {
 
   const workouts = getWorkoutsPlan();
   if (workouts.length === 0) {
-    return { plan: [], totalWeeks: 0 };
+    return {
+      plan: [],
+      totalWeeks: 0,
+      raceDate: athlete.race_date,
+      raceDistance: athlete.race_distance
+    };
   }
 
   const activities = getActivities();

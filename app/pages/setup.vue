@@ -131,10 +131,10 @@ async function saveAndGeneratePlan() {
       body,
     })
 
-    successMsg.value = 'Successfully saved profile and reset old plan! Building your training block... Redirecting to Dashboard...'
+    successMsg.value = 'Profile saved successfully! Redirecting to your training plan...'
     setTimeout(() => {
       router.push('/plan')
-    }, 2000)
+    }, 500)
   } catch (err) {
     const fetchErr = err as { data?: { statusMessage?: string } }
     console.error('Plan generation failed:', err)
