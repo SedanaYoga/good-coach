@@ -4,10 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+
   alias: {
     types: fileURLToPath(new URL('./types', import.meta.url)),
     utils: fileURLToPath(new URL('./utils', import.meta.url)),
   },
+
   devtools: { enabled: true },
 
   future: {
@@ -34,4 +36,9 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/global.css'],
+  modules: ['shadcn-nuxt', '@vueuse/nuxt'],
+  shadcn: {
+    componentDir: '@/components/ui',
+    prefix: 'Ui',
+  },
 })

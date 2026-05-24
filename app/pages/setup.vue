@@ -124,7 +124,7 @@ const distances = [
         <p>{{ errorMsg }}</p>
       </UiAlertDescription>
     </UiAlert>
-    <UiAlert v-if="successMsg" variant="success" class="mb-6">
+    <UiAlert v-if="successMsg" variant="default" class="mb-6">
       <UiAlertDescription class="flex items-start gap-2">
         <span>✅</span>
         <p>{{ successMsg }}</p>
@@ -254,16 +254,21 @@ const distances = [
                 class="text-sm font-medium text-muted-foreground"
                 >Current Fitness Level</label
               >
-              <UiSelect id="currentLevel" v-model="config.currentLevel">
-                <option value="beginner">
-                  Beginner (Started running recently, 1-2 runs/week)
-                </option>
-                <option value="intermediate">
-                  Intermediate (Can run 5K easily, 3-4 runs/week)
-                </option>
-                <option value="advanced">
-                  Advanced (Experienced runner, 5+ runs/week)
-                </option>
+              <UiSelect v-model="config.currentLevel">
+                <UiSelectTrigger id="currentLevel" class="w-full">
+                  <UiSelectValue placeholder="Select fitness level" />
+                </UiSelectTrigger>
+                <UiSelectContent>
+                  <UiSelectItem value="beginner">
+                    Beginner (Started running recently, 1-2 runs/week)
+                  </UiSelectItem>
+                  <UiSelectItem value="intermediate">
+                    Intermediate (Can run 5K easily, 3-4 runs/week)
+                  </UiSelectItem>
+                  <UiSelectItem value="advanced">
+                    Advanced (Experienced runner, 5+ runs/week)
+                  </UiSelectItem>
+                </UiSelectContent>
               </UiSelect>
             </div>
 
@@ -274,21 +279,26 @@ const distances = [
                 class="text-sm font-medium text-muted-foreground"
                 >Coach Personality Style</label
               >
-              <UiSelect id="coachPersonality" v-model="config.coachPersonality">
-                <option value="encouraging">
-                  Encouraging (Positive, motivating, supportive)
-                </option>
-                <option value="strict">
-                  Strict (Tough love, focus on target metrics, no excuses)
-                </option>
-                <option value="data-driven">
-                  Data-driven (Focuses on average pace, zones, numbers)
-                </option>
+              <UiSelect v-model="config.coachPersonality">
+                <UiSelectTrigger id="coachPersonality" class="w-full">
+                  <UiSelectValue placeholder="Select coach personality" />
+                </UiSelectTrigger>
+                <UiSelectContent>
+                  <UiSelectItem value="encouraging">
+                    Encouraging (Positive, motivating, supportive)
+                  </UiSelectItem>
+                  <UiSelectItem value="strict">
+                    Strict (Tough love, focus on target metrics, no excuses)
+                  </UiSelectItem>
+                  <UiSelectItem value="data-driven">
+                    Data-driven (Focuses on average pace, zones, numbers)
+                  </UiSelectItem>
+                </UiSelectContent>
               </UiSelect>
             </div>
 
             <!-- AI Status Warning -->
-            <UiAlert v-if="!config.hasGeminiKey" variant="warning">
+            <UiAlert v-if="!config.hasGeminiKey" variant="destructive">
               <UiAlertDescription class="text-xs">
                 ⚠️ <strong>GEMINI_API_KEY</strong> is not configured in
                 <code class="bg-muted px-1 py-0.5 rounded text-xs">.env</code>.
