@@ -46,4 +46,15 @@ export default defineNuxtConfig({
     preference: 'system',
     fallback: 'dark',
   },
+  app: {
+    head: {
+      title: 'GoodCoach - AI Running Coach',
+      meta: [
+        { name: 'description', content: 'Your AI Running Coach tracking your targets automatically.' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+      ],
+    },
+  },
 })

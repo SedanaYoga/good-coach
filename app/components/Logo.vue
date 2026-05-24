@@ -1,0 +1,35 @@
+<template>
+  <svg
+    viewBox="0 0 100 100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    :class="props.class"
+  >
+    <defs>
+      <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="currentColor" stop-opacity="1" />
+        <stop offset="100%" stop-color="currentColor" stop-opacity="0.3" />
+      </linearGradient>
+    </defs>
+    <!-- Left Wing ("G") -->
+    <g transform="translate(-1.5, 0)">
+      <path
+        d="M 50,15 L 20,55 L 50,85 L 50,60 L 38,60 L 38,48 L 50,48 Z"
+        fill="currentColor"
+      />
+    </g>
+    <!-- Right Wing ("C") -->
+    <g transform="translate(1.5, 0)">
+      <path
+        d="M 50,15 L 50,48 L 62,48 L 62,60 L 50,60 L 50,85 L 80,55 Z"
+        fill="url(#logo-gradient)"
+      />
+    </g>
+  </svg>
+</template>
+
+<script setup lang="ts">
+const props = defineProps<{
+  class?: string
+}>()
+</script>

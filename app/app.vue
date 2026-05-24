@@ -26,10 +26,9 @@ const isDark = computed({
           to="/"
           class="flex items-center gap-2 no-underline text-foreground"
         >
-          <span class="text-xl">⚡</span>
+          <Logo class="size-6 text-[#ff5a1f]" />
           <span class="font-bold text-lg tracking-tight">
-            PacePilot
-            <span class="text-primary">AI</span>
+            Good<span class="text-primary">Coach</span>
           </span>
         </NuxtLink>
         <div class="flex items-center gap-4">
@@ -61,7 +60,10 @@ const isDark = computed({
             @click="isDark = !isDark"
             aria-label="Toggle dark mode"
           >
-            <component :is="isDark ? Sun : Moon" class="size-4 text-foreground" />
+            <component
+              :is="isDark ? Sun : Moon"
+              class="size-4 text-foreground"
+            />
           </UiButton>
         </div>
       </div>
@@ -78,7 +80,7 @@ const isDark = computed({
       <div
         class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 px-6 py-4 text-sm text-muted-foreground"
       >
-        <p>© 2026 PacePilot AI. Your running progress, automated.</p>
+        <p>© 2026 GoodCoach. Your running progress, automated.</p>
         <div class="flex items-center gap-2">
           <span class="h-2 w-2 rounded-full bg-success"></span>
           <span>SQLite & Gemini Live</span>
