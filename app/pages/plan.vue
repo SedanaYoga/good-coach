@@ -4,6 +4,7 @@ import type { Workout } from 'types/domain/workout'
 interface PlanResponse {
   plan: {
     weekNumber: number
+    phase: 'initial' | 'progression' | 'taper' | 'recovery'
     workouts: Workout[]
   }[]
   totalWeeks: number
@@ -13,7 +14,7 @@ interface PlanResponse {
 
 const planData = ref<PlanResponse | null>(null)
 const isLoading = ref<boolean>(true)
-
+const isRegenerating = ref<boolean>(false)
 const expandedWeeks = ref<Record<number, boolean>>({})
 
 const router = useRouter()
@@ -35,6 +36,29 @@ async function fetchPlan() {
     console.error('Failed to fetch plan data:', err)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function regeneratePlan() {
+  if (
+    !confirm(
+      'Are you sure you want to regenerate your training plan? This will overwrite your current schedule.',
+    )
+  ) {
+    return
+  }
+  isRegenerating.value = true
+  try {
+    const data = await $fetch<PlanResponse>('/api/plan?regenerate=true')
+    planData.value = data
+    // Expand week 1 by default
+    if (data.plan.length > 0) {
+      expandedWeeks.value = { 1: true }
+    }
+  } catch (err) {
+    console.error('Failed to regenerate plan:', err)
+  } finally {
+    isRegenerating.value = false
   }
 }
 
@@ -84,145 +108,430 @@ function getWeekTypeSummary(workouts: Workout[]): string {
     ['easy_run', 'long_run', 'interval'].includes(w.workout_type),
   ).length
   const strength = workouts.filter((w) => w.workout_type === 'strength').length
-  return `${runs} Runs, ${strength} Strength`
+  const mobility = workouts.filter((w) => w.workout_type === 'mobility').length
+  return `${runs} Runs, ${strength} Strength, ${mobility} Mobility`
 }
+
+// Workout Type Details
+const workoutTypeMeta: Record<
+  string,
+  { label: string; icon: string; classes: string }
+> = {
+  easy_run: {
+    label: 'Easy Run',
+    icon: '🏃',
+    classes:
+      'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 dark:bg-emerald-500/5',
+  },
+  long_run: {
+    label: 'Long Run',
+    icon: '🏆',
+    classes: 'bg-primary/10 text-primary border-primary/20 dark:bg-primary/5',
+  },
+  interval: {
+    label: 'Intervals',
+    icon: '⚡',
+    classes:
+      'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 dark:bg-indigo-500/5',
+  },
+  strength: {
+    label: 'Strength',
+    icon: '🏋️',
+    classes:
+      'bg-cyan-500/10 text-cyan-500 border-cyan-500/20 dark:bg-cyan-500/5',
+  },
+  mobility: {
+    label: 'Mobility',
+    icon: '🧘',
+    classes:
+      'bg-pink-500/10 text-pink-500 border-pink-500/20 dark:bg-pink-500/5',
+  },
+  rest: {
+    label: 'Rest Day',
+    icon: '😴',
+    classes:
+      'bg-slate-500/10 text-slate-500 border-slate-500/20 dark:bg-slate-500/5',
+  },
+}
+
+// Group Plan by 4 Phases
+const groupedPhases = computed(() => {
+  if (!planData.value) return []
+
+  const phases = {
+    initial: {
+      key: 'initial',
+      title: 'Initial Phase',
+      badge: 'Base Building',
+      description:
+        'Establish your aerobic base, introduce core strength patterns, and build consistency.',
+      weeks: [] as typeof planData.value.plan,
+    },
+    progression: {
+      key: 'progression',
+      title: 'Progression Phase',
+      badge: 'Load & Speed overload',
+      description:
+        'Build volume peaks, transition to faster speed intervals, and increase joint loading.',
+      weeks: [] as typeof planData.value.plan,
+    },
+    taper: {
+      key: 'taper',
+      title: 'Taper Phase',
+      badge: 'Volume Cutback',
+      description:
+        'Cut back running mileage while preserving short intensity bursts to keep muscles primed.',
+      weeks: [] as typeof planData.value.plan,
+    },
+    recovery: {
+      key: 'recovery',
+      title: 'Recovery Phase',
+      badge: 'Race & Restore',
+      description:
+        'Prepare your mind and body for race execution, then heal up with soft movement.',
+      weeks: [] as typeof planData.value.plan,
+    },
+  }
+
+  for (const week of planData.value.plan) {
+    const phaseKey = week.phase as keyof typeof phases
+    if (phases[phaseKey]) {
+      phases[phaseKey].weeks.push(week)
+    } else {
+      phases.initial.weeks.push(week)
+    }
+  }
+
+  return Object.values(phases).filter((p) => p.weeks.length > 0)
+})
+
+const overallStats = computed(() => {
+  if (!planData.value) return { runs: 0, strength: 0, mobility: 0 }
+  let runs = 0
+  let strength = 0
+  let mobility = 0
+
+  for (const week of planData.value.plan) {
+    for (const w of week.workouts) {
+      if (['easy_run', 'long_run', 'interval'].includes(w.workout_type)) runs++
+      else if (w.workout_type === 'strength') strength++
+      else if (w.workout_type === 'mobility') mobility++
+    }
+  }
+
+  return { runs, strength, mobility }
+})
 </script>
 
 <template>
   <div
-    v-if="isLoading"
+    v-if="isLoading || isRegenerating"
     class="flex flex-col items-center justify-center min-h-[50vh] gap-4 animate-fade-in"
   >
-    <div class="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin"></div>
-    <p class="text-sm text-muted-foreground">Loading your training plan...</p>
+    <div
+      class="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin"
+    ></div>
+    <p class="text-sm text-muted-foreground">
+      {{
+        isRegenerating
+          ? 'Coach is rebuilding your 4-phase block...'
+          : 'Loading your training plan...'
+      }}
+    </p>
   </div>
 
-  <div v-else-if="planData" class="max-w-[800px] mx-auto animate-fade-in">
-    <div class="text-center mb-8">
-      <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-1">
-        Your Training Schedule
-      </h1>
-      <p class="text-sm text-muted-foreground">
-        Complete week-by-week roadmap for your {{ planData.raceDistance }} on
-        {{ formatDate(planData.raceDate) }}.
-      </p>
+  <div v-else-if="planData" class="max-w-[900px] mx-auto animate-fade-in">
+    <!-- Header Block -->
+    <div
+      class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+    >
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-1">
+          Your Training Schedule
+        </h1>
+        <p class="text-sm text-muted-foreground">
+          Complete 4-phase roadmap for your {{ planData.raceDistance }} on
+          {{ formatDate(planData.raceDate) }}.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <UiButton variant="outline" size="sm" @click="router.push('/setup')">
+          Adjust Goals ⚙️
+        </UiButton>
+        <UiButton variant="default" size="sm" @click="regeneratePlan">
+          Regenerate Block 🔄
+        </UiButton>
+      </div>
     </div>
 
-    <!-- Accordion of Weeks -->
-    <div class="flex flex-col border border-border rounded-xl overflow-hidden">
-      <div
-        v-for="(week, weekIdx) in planData.plan"
-        :key="week.weekNumber"
-        :class="['flex flex-col', { 'border-t border-border': weekIdx > 0 }]"
-      >
-        <!-- Week Header Trigger -->
-        <button
-          @click="toggleWeek(week.weekNumber)"
-          class="w-full text-left flex justify-between items-center cursor-pointer px-5 py-4 hover:bg-muted/50 transition-colors group bg-transparent border-none text-foreground"
+    <!-- Overall Summary Grid -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="bg-card border border-border p-4 rounded-xl text-center">
+        <span
+          class="text-[0.65rem] text-muted-foreground uppercase tracking-wider block mb-1"
+          >Running Sessions</span
         >
-          <div class="flex items-center gap-3">
-            <UiBadge variant="secondary" class="text-[0.65rem] uppercase tracking-wider font-bold">
-              Week {{ week.weekNumber }}
-            </UiBadge>
-            <div>
-              <h3 class="text-sm font-medium">Training Block {{ week.weekNumber }}</h3>
-              <span class="text-xs text-muted-foreground">{{ getWeekTypeSummary(week.workouts) }}</span>
+        <span class="text-xl md:text-2xl font-bold text-foreground"
+          >🏃 {{ overallStats.runs }}</span
+        >
+      </div>
+      <div class="bg-card border border-border p-4 rounded-xl text-center">
+        <span
+          class="text-[0.65rem] text-muted-foreground uppercase tracking-wider block mb-1"
+          >Strength Workouts</span
+        >
+        <span class="text-xl md:text-2xl font-bold text-foreground"
+          >🏋️ {{ overallStats.strength }}</span
+        >
+      </div>
+      <div class="bg-card border border-border p-4 rounded-xl text-center">
+        <span
+          class="text-[0.65rem] text-muted-foreground uppercase tracking-wider block mb-1"
+          >Mobility Flows</span
+        >
+        <span class="text-xl md:text-2xl font-bold text-foreground"
+          >🧘 {{ overallStats.mobility }}</span
+        >
+      </div>
+    </div>
+
+    <!-- 4 Phases Dashboard -->
+    <div class="flex flex-col gap-10">
+      <section
+        v-for="phase in groupedPhases"
+        :key="phase.key"
+        class="flex flex-col gap-4 border-l-2 border-primary/20 pl-4 md:pl-6 ml-1.5"
+      >
+        <!-- Phase Details Card -->
+        <div class="bg-card border border-border/80 rounded-xl p-5 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span
+              class="bg-primary/10 text-primary border border-primary/20 text-[0.65rem] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full"
+            >
+              {{ phase.badge }}
+            </span>
+            <h2 class="text-lg font-bold text-foreground">{{ phase.title }}</h2>
+          </div>
+          <p class="text-xs text-muted-foreground leading-relaxed">
+            {{ phase.description }}
+          </p>
+        </div>
+
+        <!-- Weeks in Phase -->
+        <div
+          class="flex flex-col border border-border rounded-xl overflow-hidden bg-card"
+        >
+          <div
+            v-for="(week, weekIdx) in phase.weeks"
+            :key="week.weekNumber"
+            :class="[
+              'flex flex-col',
+              { 'border-t border-border': weekIdx > 0 },
+            ]"
+          >
+            <!-- Week Header Trigger -->
+            <button
+              @click="toggleWeek(week.weekNumber)"
+              class="w-full text-left flex justify-between items-center cursor-pointer px-5 py-4 hover:bg-muted/30 transition-colors bg-transparent border-none text-foreground"
+            >
+              <div class="flex items-center gap-3">
+                <UiBadge
+                  variant="secondary"
+                  class="text-[0.65rem] uppercase tracking-wider font-bold"
+                >
+                  Week {{ week.weekNumber }}
+                </UiBadge>
+                <div>
+                  <h3 class="text-sm font-medium">
+                    Training Block Week {{ week.weekNumber }}
+                  </h3>
+                  <span class="text-[0.7rem] text-muted-foreground">{{
+                    getWeekTypeSummary(week.workouts)
+                  }}</span>
+                </div>
+              </div>
+              <svg
+                :class="[
+                  'w-4 h-4 text-muted-foreground transition-transform duration-200',
+                  { 'rotate-180': expandedWeeks[week.weekNumber] },
+                ]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            <!-- Week Workouts List -->
+            <div
+              v-if="expandedWeeks[week.weekNumber]"
+              class="px-5 pb-4 animate-fade-in flex flex-col gap-3"
+            >
+              <UiCard
+                v-for="w in week.workouts"
+                :key="w.id"
+                class="hover:border-border transition-colors"
+              >
+                <UiCardHeader class="pb-2">
+                  <div
+                    class="flex flex-col sm:flex-row justify-between items-start gap-2"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">
+                        {{ workoutTypeMeta[w.workout_type]?.icon || '🏃' }}
+                      </span>
+                      <div>
+                        <span
+                          class="text-[0.65rem] text-muted-foreground uppercase tracking-wider block"
+                        >
+                          Day {{ w.day_number }} ·
+                          {{ formatDate(w.calculated_date) }}
+                        </span>
+                        <UiCardTitle class="text-sm font-semibold">{{
+                          w.title
+                        }}</UiCardTitle>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <!-- Custom Type Badge -->
+                      <UiBadge
+                        v-if="workoutTypeMeta[w.workout_type]"
+                        variant="outline"
+                        :class="[
+                          'text-[0.6rem] uppercase tracking-wider font-semibold border',
+                          workoutTypeMeta[w.workout_type]?.classes,
+                        ]"
+                      >
+                        {{ workoutTypeMeta[w.workout_type]?.label }}
+                      </UiBadge>
+                      <UiBadge
+                        :variant="
+                          w.status === 'completed'
+                            ? 'outline'
+                            : w.status === 'skipped'
+                              ? 'destructive'
+                              : 'outline'
+                        "
+                        :class="[
+                          'text-[0.6rem] uppercase',
+                          w.status === 'completed'
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 dark:bg-emerald-500/5'
+                            : '',
+                        ]"
+                      >
+                        {{
+                          w.status === 'completed'
+                            ? '✓ Completed'
+                            : w.status === 'skipped'
+                              ? '✗ Skipped'
+                              : 'Pending'
+                        }}
+                      </UiBadge>
+                    </div>
+                  </div>
+                </UiCardHeader>
+                <UiCardContent>
+                  <p class="text-xs text-muted-foreground leading-relaxed mb-3">
+                    {{ w.description }}
+                  </p>
+
+                  <!-- Targets -->
+                  <div
+                    v-if="w.distance_target || w.duration_target"
+                    class="flex flex-wrap items-center gap-3 text-[0.7rem] text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-md border border-border"
+                  >
+                    <span class="font-medium text-foreground">Target:</span>
+                    <span v-if="w.distance_target"
+                      >📏 {{ formatDistance(w.distance_target) }}</span
+                    >
+                    <span v-if="w.duration_target"
+                      >⏱️ {{ formatDuration(w.duration_target) }}</span
+                    >
+                  </div>
+
+                  <!-- Completed Activity Link -->
+                  <div
+                    v-if="w.status === 'completed' && w.activity"
+                    class="mt-3 border-t border-border pt-3"
+                  >
+                    <div class="text-[0.7rem] font-semibold mb-2 text-success">
+                      💪 Completed via Sync: "{{ w.activity.name }}"
+                    </div>
+
+                    <div
+                      class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-success/5 border border-success/10 p-2 rounded-lg mb-2"
+                    >
+                      <div class="flex flex-col">
+                        <span class="text-[0.6rem] text-muted-foreground block"
+                          >Distance</span
+                        >
+                        <span class="font-semibold text-xs">{{
+                          formatDistance(w.activity.distance)
+                        }}</span>
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="text-[0.6rem] text-muted-foreground block"
+                          >Duration</span
+                        >
+                        <span class="font-semibold text-xs">{{
+                          formatDuration(w.activity.moving_time)
+                        }}</span>
+                      </div>
+                      <div
+                        class="flex flex-col"
+                        v-if="w.activity.sport_type === 'Run'"
+                      >
+                        <span class="text-[0.6rem] text-muted-foreground block"
+                          >Avg Pace</span
+                        >
+                        <span class="font-semibold text-xs">{{
+                          formatPace(w.activity.average_speed)
+                        }}</span>
+                      </div>
+                      <div
+                        class="flex flex-col"
+                        v-if="w.activity.average_heartrate"
+                      >
+                        <span class="text-[0.6rem] text-muted-foreground block"
+                          >Heartrate</span
+                        >
+                        <span class="font-semibold text-xs"
+                          >{{
+                            Math.round(w.activity.average_heartrate)
+                          }}
+                          bpm</span
+                        >
+                      </div>
+                    </div>
+
+                    <!-- Coach Feedback -->
+                    <div
+                      v-if="w.coach_feedback"
+                      class="bg-muted/40 border border-border p-2.5 rounded-lg"
+                    >
+                      <span
+                        class="text-[0.65rem] font-semibold text-primary block mb-0.5"
+                        >🧠 Coach Feedback:</span
+                      >
+                      <p
+                        class="text-[0.7rem] leading-relaxed text-muted-foreground italic"
+                      >
+                        "{{ w.coach_feedback }}"
+                      </p>
+                    </div>
+                  </div>
+                </UiCardContent>
+              </UiCard>
             </div>
           </div>
-          <svg
-            :class="[
-              'w-4 h-4 text-muted-foreground transition-transform duration-200',
-              { 'rotate-180': expandedWeeks[week.weekNumber] },
-            ]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        <!-- Week Workouts List -->
-        <div
-          v-if="expandedWeeks[week.weekNumber]"
-          class="px-5 pb-4 animate-fade-in flex flex-col gap-3"
-        >
-          <UiCard
-            v-for="w in week.workouts"
-            :key="w.id"
-          >
-            <UiCardHeader class="pb-3">
-              <div class="flex flex-col sm:flex-row justify-between items-start gap-2">
-                <div>
-                  <span class="text-xs text-muted-foreground uppercase tracking-wider block mb-1">
-                    Day {{ w.day_number }} · {{ formatDate(w.calculated_date) }}
-                  </span>
-                  <UiCardTitle class="text-base">{{ w.title }}</UiCardTitle>
-                </div>
-                <UiBadge
-                  :variant="w.status === 'completed' ? 'success' : w.status === 'skipped' ? 'destructive' : 'outline'"
-                  class="text-[0.65rem] uppercase shrink-0"
-                >
-                  {{ w.status === 'completed' ? '✓ Completed' : w.status === 'skipped' ? '✗ Skipped' : 'Pending' }}
-                </UiBadge>
-              </div>
-            </UiCardHeader>
-            <UiCardContent>
-              <p class="text-sm text-muted-foreground leading-relaxed mb-4">
-                {{ w.description }}
-              </p>
-
-              <!-- Targets -->
-              <div
-                v-if="w.distance_target || w.duration_target"
-                class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded-md border border-border"
-              >
-                <span class="font-medium text-foreground">Target:</span>
-                <span v-if="w.distance_target">📏 {{ formatDistance(w.distance_target) }}</span>
-                <span v-if="w.duration_target">⏱️ {{ formatDuration(w.duration_target) }}</span>
-                <span class="capitalize">⚙️ {{ w.workout_type.replace('_', ' ') }}</span>
-              </div>
-
-              <!-- Completed Activity Link -->
-              <div v-if="w.status === 'completed' && w.activity" class="mt-4 border-t border-border pt-4">
-                <div class="text-xs font-medium mb-3 text-success">
-                  💪 Sync Session: "{{ w.activity.name }}"
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-success/5 border border-success/10 p-3 rounded-lg mb-3">
-                  <div class="flex flex-col">
-                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Distance</span>
-                    <span class="font-semibold text-sm">{{ formatDistance(w.activity.distance) }}</span>
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Duration</span>
-                    <span class="font-semibold text-sm">{{ formatDuration(w.activity.moving_time) }}</span>
-                  </div>
-                  <div class="flex flex-col" v-if="w.activity.sport_type === 'Run'">
-                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Avg Pace</span>
-                    <span class="font-semibold text-sm">{{ formatPace(w.activity.average_speed) }}</span>
-                  </div>
-                  <div class="flex flex-col" v-if="w.activity.average_heartrate">
-                    <span class="text-[0.65rem] text-muted-foreground block mb-0.5">Heartrate</span>
-                    <span class="font-semibold text-sm">{{ Math.round(w.activity.average_heartrate) }} bpm</span>
-                  </div>
-                </div>
-
-                <!-- Coach Feedback -->
-                <div
-                  v-if="w.coach_feedback"
-                  class="bg-muted/50 border border-border p-3 rounded-lg"
-                >
-                  <span class="text-xs font-medium text-primary block mb-1">🧠 Coach Feedback:</span>
-                  <p class="text-xs leading-relaxed text-muted-foreground italic">
-                    "{{ w.coach_feedback }}"
-                  </p>
-                </div>
-              </div>
-            </UiCardContent>
-          </UiCard>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>

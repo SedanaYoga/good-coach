@@ -1,6 +1,6 @@
 import type { Activity } from './activity';
 
-export type WorkoutType = 'interval' | 'easy_run' | 'long_run' | 'strength' | 'rest';
+export type WorkoutType = 'interval' | 'easy_run' | 'long_run' | 'strength' | 'mobility' | 'rest';
 export type WorkoutStatus = 'pending' | 'completed' | 'skipped';
 
 export interface Workout {
@@ -8,6 +8,7 @@ export interface Workout {
   week_number: number;
   day_number: number;
   workout_type: WorkoutType;
+  phase?: 'initial' | 'progression' | 'taper' | 'recovery';
   title: string;
   description: string;
   distance_target: number | null;

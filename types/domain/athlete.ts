@@ -7,6 +7,8 @@ export interface AthleteConfig {
   race_distance: string;
   race_date: string;
   target_pace: string | null;
+  target_time: string | null;
+  onboarding_answers: string | null;
   coach_personality: 'encouraging' | 'strict' | 'data-driven';
   current_level: 'beginner' | 'intermediate' | 'advanced';
   weekly_runs_target: number;
@@ -15,8 +17,10 @@ export interface AthleteConfig {
 export interface SetupRequest {
   raceDistance: string;
   raceDate: string;
+  targetTime?: string;
   coachPersonality?: 'encouraging' | 'strict' | 'data-driven';
   currentLevel?: 'beginner' | 'intermediate' | 'advanced';
+  answers?: Record<string, string>;
 }
 
 export interface SetupConfigResponse {
@@ -24,6 +28,8 @@ export interface SetupConfigResponse {
   athleteId: number | null;
   raceDistance: string;
   raceDate: string;
+  targetTime: string | null;
+  onboardingAnswers: Record<string, string> | null;
   coachPersonality: 'encouraging' | 'strict' | 'data-driven';
   currentLevel: 'beginner' | 'intermediate' | 'advanced';
   hasGeminiKey: boolean;

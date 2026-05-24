@@ -32,6 +32,8 @@ export function getDb() {
       race_distance TEXT, -- '5K', '10K', 'half_marathon', 'marathon'
       race_date TEXT, -- 'YYYY-MM-DD'
       target_pace TEXT, -- e.g. '5:30'
+      target_time TEXT,
+      onboarding_answers TEXT,
       coach_personality TEXT DEFAULT 'encouraging', -- 'encouraging', 'strict', 'data-driven'
       current_level TEXT DEFAULT 'beginner', -- 'beginner', 'intermediate'
       weekly_runs_target INTEGER DEFAULT 3
@@ -58,6 +60,7 @@ export function getDb() {
       week_number INTEGER,
       day_number INTEGER, -- 1 to 7
       workout_type TEXT, -- 'interval', 'easy_run', 'long_run', 'strength', 'rest'
+      phase TEXT, -- 'initial', 'progression', 'taper', 'recovery'
       title TEXT,
       description TEXT,
       distance_target REAL, -- in meters
@@ -68,6 +71,28 @@ export function getDb() {
       FOREIGN KEY(activity_id) REFERENCES activities(id)
     );
   `)
+
+  // Perform dynamic column migrations for existing installations
+  try {
+    dbInstance.prepare("SELECT target_time FROM athlete_config LIMIT 1").get();
+  } catch (e) {
+    console.log("Migration: Adding target_time column to athlete_config...");
+    dbInstance.exec("ALTER TABLE athlete_config ADD COLUMN target_time TEXT;");
+  }
+
+  try {
+    dbInstance.prepare("SELECT onboarding_answers FROM athlete_config LIMIT 1").get();
+  } catch (e) {
+    console.log("Migration: Adding onboarding_answers column to athlete_config...");
+    dbInstance.exec("ALTER TABLE athlete_config ADD COLUMN onboarding_answers TEXT;");
+  }
+
+  try {
+    dbInstance.prepare("SELECT phase FROM workouts LIMIT 1").get();
+  } catch (e) {
+    console.log("Migration: Adding phase column to workouts...");
+    dbInstance.exec("ALTER TABLE workouts ADD COLUMN phase TEXT;");
+  }
 
   return dbInstance
 }
@@ -153,9 +178,9 @@ export function saveWorkoutsPlan(workouts: Workout[]): void {
   const deleteStmt = db.prepare('DELETE FROM workouts')
   const insertStmt = db.prepare(`
     INSERT INTO workouts (
-      id, week_number, day_number, workout_type, title, description, distance_target, duration_target, status
+      id, week_number, day_number, workout_type, phase, title, description, distance_target, duration_target, status
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
     )
   `)
 
@@ -168,6 +193,7 @@ export function saveWorkoutsPlan(workouts: Workout[]): void {
         w.week_number,
         w.day_number,
         w.workout_type,
+        w.phase || null,
         w.title,
         w.description,
         w.distance_target || null,
